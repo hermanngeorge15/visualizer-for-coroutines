@@ -12,6 +12,7 @@ import type {
   CoroutineTimeline,
   PaginatedEventsRequest,
   PaginatedEventsResponse,
+  ValidationResult,
 } from '@/types/api'
 import { normalizeEvents } from './utils'
 
@@ -142,6 +143,15 @@ class ApiClient {
 
   async getCoroutineTimeline(sessionId: string, coroutineId: string): Promise<CoroutineTimeline> {
     return this.fetchJson<CoroutineTimeline>(`/sessions/${sessionId}/coroutines/${coroutineId}/timeline`)
+  }
+
+  // Validation
+  async validateSession(sessionId: string): Promise<ValidationResult> {
+    return this.fetchJson<ValidationResult>(`/validate/session/${sessionId}`, { method: 'POST' })
+  }
+
+  async getValidationRules(): Promise<{ rules: Array<{ id: string; name: string; description: string }> }> {
+    return this.fetchJson(`/validate/rules`)
   }
 }
 

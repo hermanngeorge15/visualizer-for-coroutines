@@ -24,9 +24,10 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@vizcor/api-types": ["../shared/api-types/index.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../shared/api-types"]
 }
 
