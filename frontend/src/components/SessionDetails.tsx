@@ -13,6 +13,7 @@ import { JobStateDisplay } from './JobStateDisplay'
 import { StructuredConcurrencyInfo } from './StructuredConcurrencyInfo'
 import { ThreadTimeline } from './ThreadTimeline'
 import { DispatcherOverview } from './DispatcherOverview'
+import { ChannelPanel } from './channels/ChannelPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -343,16 +344,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
         {/* Channels tab - shown when channel events are present */}
         {eventCategories.hasChannels && (
           <Tab key="channels" title="Channels">
-            <Card className="mt-2">
-              <CardBody>
-                <div className="text-center text-default-400 py-8">
-                  <p className="text-lg font-semibold mb-2">Channel Visualization</p>
-                  <p className="text-sm">
-                    Channel send/receive flows and buffer state will be displayed here.
-                  </p>
-                </div>
-              </CardBody>
-            </Card>
+            <ChannelPanel sessionId={sessionId} />
           </Tab>
         )}
 
