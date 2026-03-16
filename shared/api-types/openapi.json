@@ -1,0 +1,1519 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Coroutine Visualizer API",
+    "version": "1.0.0",
+    "description": "REST API for the Kotlin Coroutine Visualizer. SSE streaming events are defined separately in events.ts."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/api/sessions": {
+      "get": {
+        "operationId": "listSessions",
+        "summary": "List all active sessions",
+        "tags": ["Sessions"],
+        "responses": {
+          "200": {
+            "description": "List of active sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSession",
+        "summary": "Create a new visualization session",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional session name"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Session created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{id}": {
+      "get": {
+        "operationId": "getSession",
+        "summary": "Get session snapshot with coroutine state",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSnapshotResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing session ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSession",
+        "summary": "Close and delete a session",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{id}/events": {
+      "get": {
+        "operationId": "getSessionEvents",
+        "summary": "Get all events for a session",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all session events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VizEvent"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{id}/hierarchy": {
+      "get": {
+        "operationId": "getSessionHierarchy",
+        "summary": "Get coroutine hierarchy tree for a session",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional scope ID to filter hierarchy"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hierarchy tree of coroutines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HierarchyNode"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{id}/threads": {
+      "get": {
+        "operationId": "getSessionThreadActivity",
+        "summary": "Get thread activity data for a session",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread activity data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ThreadEvent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/{id}/coroutines/{coroutineId}/timeline": {
+      "get": {
+        "operationId": "getCoroutineTimeline",
+        "summary": "Get timeline for a specific coroutine",
+        "tags": ["Sessions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "coroutineId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coroutine timeline with computed durations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoroutineTimeline"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session or coroutine not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios": {
+      "get": {
+        "operationId": "listScenarios",
+        "summary": "List all available scenarios",
+        "tags": ["Scenarios"],
+        "responses": {
+          "200": {
+            "description": "List of available scenarios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/nested": {
+      "post": {
+        "operationId": "runNestedScenario",
+        "summary": "Run nested coroutines scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/parallel": {
+      "post": {
+        "operationId": "runParallelScenario",
+        "summary": "Run parallel execution scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/cancellation": {
+      "post": {
+        "operationId": "runCancellationScenario",
+        "summary": "Run cancellation scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/deep-nesting": {
+      "post": {
+        "operationId": "runDeepNestingScenario",
+        "summary": "Run deep nesting scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/mixed": {
+      "post": {
+        "operationId": "runMixedScenario",
+        "summary": "Run mixed sequential/parallel scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/exception": {
+      "post": {
+        "operationId": "runExceptionScenario",
+        "summary": "Run exception handling scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/channel-rendezvous": {
+      "post": {
+        "operationId": "runChannelRendezvousScenario",
+        "summary": "Run channel rendezvous scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/channel-buffered": {
+      "post": {
+        "operationId": "runChannelBufferedScenario",
+        "summary": "Run channel buffered scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/channel-fan-out": {
+      "post": {
+        "operationId": "runChannelFanOutScenario",
+        "summary": "Run channel fan-out scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/order-processing": {
+      "post": {
+        "operationId": "runOrderProcessingScenario",
+        "summary": "Run order processing scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fail",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Simulate payment failure"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/user-registration": {
+      "post": {
+        "operationId": "runUserRegistrationScenario",
+        "summary": "Run user registration scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "failEmail",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Simulate email failure with retry"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/report-generation": {
+      "post": {
+        "operationId": "runReportGenerationScenario",
+        "summary": "Run report generation scenario",
+        "tags": ["Scenarios"],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Simulate API timeout"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioCompletionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/custom": {
+      "post": {
+        "operationId": "runCustomScenario",
+        "summary": "Run a custom user-defined scenario",
+        "tags": ["Scenarios"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioConfigRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scenario completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioExecutionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid scenario configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioExecutionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Scenario execution error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioExecutionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validate/session/{id}": {
+      "post": {
+        "operationId": "validateSession",
+        "summary": "Run validation rules against a session's events",
+        "tags": ["Validation"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validation results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validate/rules": {
+      "get": {
+        "operationId": "listValidationRules",
+        "summary": "List all available validation rules",
+        "tags": ["Validation"],
+        "responses": {
+          "200": {
+            "description": "List of validation rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationRule"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SessionInfo": {
+        "type": "object",
+        "required": ["sessionId", "coroutineCount", "eventCount"],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "coroutineCount": {
+            "type": "integer"
+          },
+          "eventCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "CreateSessionResponse": {
+        "type": "object",
+        "required": ["sessionId", "message"],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "CoroutineState": {
+        "type": "string",
+        "enum": ["CREATED", "ACTIVE", "SUSPENDED", "WAITING_FOR_CHILDREN", "COMPLETED", "CANCELLED", "FAILED"]
+      },
+      "CoroutineNodeDto": {
+        "type": "object",
+        "required": ["id", "jobId", "scopeId", "state"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "scopeId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "SessionSnapshotResponse": {
+        "type": "object",
+        "required": ["sessionId", "coroutineCount", "eventCount", "coroutines"],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "coroutineCount": {
+            "type": "integer"
+          },
+          "eventCount": {
+            "type": "integer"
+          },
+          "coroutines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoroutineNodeDto"
+            }
+          }
+        }
+      },
+      "HierarchyNode": {
+        "type": "object",
+        "required": ["id", "name", "scopeId", "state", "createdAtNanos", "jobId"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "name": {
+            "type": "string"
+          },
+          "scopeId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "createdAtNanos": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "completedAtNanos": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "dispatcherId": {
+            "type": "string",
+            "nullable": true
+          },
+          "dispatcherName": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentThreadId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "currentThreadName": {
+            "type": "string",
+            "nullable": true
+          },
+          "jobId": {
+            "type": "string"
+          },
+          "exceptionType": {
+            "type": "string",
+            "nullable": true
+          },
+          "exceptionMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "activeChildrenIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "activeChildrenCount": {
+            "type": "integer",
+            "default": 0
+          }
+        }
+      },
+      "CoroutineTimeline": {
+        "type": "object",
+        "required": ["coroutineId", "name", "state"],
+        "properties": {
+          "coroutineId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "totalDuration": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Total time from creation to completion in nanoseconds"
+          },
+          "activeDuration": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Time spent actively running in nanoseconds"
+          },
+          "suspendedDuration": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Time spent suspended in nanoseconds"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "childrenIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineEventSummary"
+            },
+            "default": []
+          }
+        }
+      },
+      "TimelineEventSummary": {
+        "type": "object",
+        "required": ["seq", "tsNanos", "kind"],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tsNanos": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "threadName": {
+            "type": "string",
+            "nullable": true
+          },
+          "dispatcherName": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "For suspension events"
+          }
+        }
+      },
+      "ThreadEvent": {
+        "type": "object",
+        "required": ["coroutineId", "threadId", "threadName", "timestamp", "eventType"],
+        "properties": {
+          "coroutineId": {
+            "type": "string"
+          },
+          "threadId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "threadName": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": ["ASSIGNED", "RELEASED"]
+          },
+          "dispatcherName": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Scenario": {
+        "type": "object",
+        "required": ["id", "name", "description", "endpoint"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["realistic", "channel", "basic"]
+          },
+          "duration": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ScenarioListResponse": {
+        "type": "object",
+        "required": ["scenarios"],
+        "properties": {
+          "scenarios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            }
+          }
+        }
+      },
+      "ScenarioCompletionResponse": {
+        "type": "object",
+        "required": ["success", "sessionId", "message", "coroutineCount", "eventCount"],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "coroutineCount": {
+            "type": "integer"
+          },
+          "eventCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "ActionDTO": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["delay", "throw", "log", "custom"]
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {}
+          }
+        }
+      },
+      "CoroutineConfigDTO": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionDTO"
+            },
+            "default": []
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoroutineConfigDTO"
+            },
+            "default": []
+          }
+        }
+      },
+      "ScenarioConfigRequest": {
+        "type": "object",
+        "required": ["name", "root"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "root": {
+            "$ref": "#/components/schemas/CoroutineConfigDTO"
+          }
+        }
+      },
+      "ScenarioExecutionResponse": {
+        "type": "object",
+        "required": ["success", "sessionId", "message"],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "coroutineCount": {
+            "type": "integer",
+            "default": 0
+          },
+          "eventCount": {
+            "type": "integer",
+            "default": 0
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "ValidationResponse": {
+        "type": "object",
+        "required": ["sessionId", "results", "timing"],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationResult"
+            }
+          },
+          "timing": {
+            "$ref": "#/components/schemas/TimingReport"
+          }
+        }
+      },
+      "ValidationResult": {
+        "type": "object",
+        "required": ["ruleName", "message"],
+        "discriminator": {
+          "propertyName": "type"
+        },
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["Pass", "Fail"]
+          },
+          "ruleName": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string",
+            "description": "Present only for Fail results"
+          }
+        }
+      },
+      "TimingReport": {
+        "type": "object",
+        "required": ["coroutineDurations", "suspensionDurations", "totalDuration"],
+        "properties": {
+          "coroutineDurations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Map of coroutine ID to total duration in nanoseconds"
+          },
+          "suspensionDurations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "description": "Map of coroutine ID to list of suspension durations in nanoseconds"
+          },
+          "totalDuration": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Overall duration of the event stream in nanoseconds"
+          }
+        }
+      },
+      "ValidationRule": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "VizEvent": {
+        "type": "object",
+        "description": "Base event shape. Actual events are polymorphic and discriminated by the 'kind' field. See events.ts for full TypeScript types.",
+        "required": ["sessionId", "seq", "tsNanos", "kind"],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tsNanos": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "kind": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
