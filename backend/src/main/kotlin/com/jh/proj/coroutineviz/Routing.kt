@@ -5,6 +5,7 @@ import com.jh.proj.coroutineviz.routes.registerScenarioRunnerRoutes
 import com.jh.proj.coroutineviz.routes.registerSessionRoutes
 import com.jh.proj.coroutineviz.routes.registerSyncScenarioRoutes
 import com.jh.proj.coroutineviz.routes.registerTestRoutes
+import com.jh.proj.coroutineviz.routes.registerValidationRoutes
 import com.jh.proj.coroutineviz.routes.registerVizScenarioRoutes
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -18,6 +19,7 @@ fun Application.configureRouting() {
         registerSyncScenarioRoutes()
         registerTestRoutes()
         registerSessionRoutes()
+        registerValidationRoutes()
         registerScenarioRunnerRoutes()
     }
 }
