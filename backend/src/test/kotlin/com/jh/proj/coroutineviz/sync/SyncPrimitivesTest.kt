@@ -109,7 +109,7 @@ class SyncPrimitivesTest {
 
     @Test
     @DisplayName("VizMutex - Queue position tracked correctly")
-    fun `mutex queue tracking`() = runTest {
+    fun `mutex queue tracking`() = runBlocking {
         val mutex = VizMutex(session, "queue-mutex")
         val scope = VizScope(session)
 
@@ -129,7 +129,7 @@ class SyncPrimitivesTest {
             }
         }
 
-        delay(10)
+        delay(50) // Give waiter-1 time to reach lock() and emit MutexLockRequested
 
         // Verify queue position in request event
         val requests = session.store.all().filterIsInstance<MutexLockRequested>()
@@ -171,23 +171,29 @@ class SyncPrimitivesTest {
 
     @Test
     @DisplayName("VizSemaphore - Never exceeds permit limit")
-    fun `semaphore permit bounds`() = runTest {
+    fun `semaphore permit bounds`() = runBlocking {
         val semaphore = VizSemaphore(session, permits = 2, label = "bounded-semaphore")
         val scope = VizScope(session)
+        val concurrentCount = java.util.concurrent.atomic.AtomicInteger(0)
+        val maxConcurrent = java.util.concurrent.atomic.AtomicInteger(0)
 
         // Launch multiple coroutines
         val jobs = (1..5).map { i ->
             scope.vizLaunch("worker-$i") {
                 semaphore.withPermit {
-                    // At most 2 should be active simultaneously
-                    assertTrue(semaphore.getActiveHolderCount() <= 2)
+                    // Track actual concurrency using an atomic counter
+                    val current = concurrentCount.incrementAndGet()
+                    maxConcurrent.updateAndGet { max -> maxOf(max, current) }
                     vizDelay(50)
+                    concurrentCount.decrementAndGet()
                 }
             }
         }
 
         jobs.forEach { it.join() }
 
+        // Verify at most 2 were active simultaneously (delegate semaphore enforces this)
+        assertTrue(maxConcurrent.get() <= 2, "Max concurrent was ${maxConcurrent.get()}, expected <= 2")
         // Verify all permits returned
         assertEquals(2, semaphore.availablePermits)
     }
