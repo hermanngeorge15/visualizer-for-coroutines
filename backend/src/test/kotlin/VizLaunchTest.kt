@@ -67,8 +67,8 @@ class VizLaunchTest {
         assertEquals(completedState, childOne?.state)
         assertEquals(completedState, childTwo?.state)
         assertEquals(completedState, childThree?.state)
-        val eventLogExpected = listOf(parentLabel,childTwoLabel,childOneLabel,childThreeLabel)
-        assertEquals(eventLog, eventLogExpected)
+        val eventLogExpected = listOf(childTwoLabel,childOneLabel,childThreeLabel,parentLabel)
+        assertEquals(eventLogExpected, eventLog)
 
     }
 

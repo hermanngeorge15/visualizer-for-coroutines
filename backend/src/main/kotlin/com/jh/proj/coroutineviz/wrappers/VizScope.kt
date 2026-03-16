@@ -110,9 +110,14 @@ class VizScope(
             CoroutineScope(currentCoroutineContext())
         } ?: this
 
+        // Merge VizScope's own context (which may contain a specific dispatcher)
+        // so that e.g. ioScope.vizLaunch() uses the IO dispatcher even when nested
+        val scopeDispatcher = this.coroutineContext[ContinuationInterceptor]
 
         // Launch with the viz element in context
-        val job = targetScope.launch(context + vizElement) {
+        // scopeDispatcher is applied first, then overridden by explicit context if provided
+        val mergedContext = (scopeDispatcher ?: EmptyCoroutineContext) + context + vizElement
+        val job = targetScope.launch(mergedContext) {
             val currentJob = coroutineContext[Job] ?: throw IllegalArgumentException("Missing job")
             // ✨ NEW: Register job for tracking
             session.snapshot.registerJob(currentJob, coroutineId)
@@ -243,22 +248,24 @@ class VizScope(
             label = label
         )
 
-        // ✨ NEW: Register job
-        val currentJob = coroutineContext[Job]!!
-        session.snapshot.registerJob(currentJob, coroutineId)
-        session.jobMonitor.track(currentJob, jobId, coroutineId)
-
-
         // Check if we're in a nested context (inside another vizLaunch/vizAsync)
         // If so, use current scope; otherwise use VizScope
         val targetScope = currentCoroutineContext()[VizCoroutineElement]?.let {
             CoroutineScope(currentCoroutineContext())
         } ?: this
 
+        // Merge VizScope's own context (which may contain a specific dispatcher)
+        val scopeDispatcher = this.coroutineContext[ContinuationInterceptor]
+        val mergedContext = (scopeDispatcher ?: EmptyCoroutineContext) + context + vizElement
+
         // Use async{} instead of launch{}
-        val deferred = targetScope.async(context + vizElement) {
+        val deferred = targetScope.async(mergedContext) {
 
             val currentJob = coroutineContext[Job] ?: throw IllegalArgumentException("Missing job")
+
+            // ✨ Register job for tracking (must happen inside async where Job exists)
+            session.snapshot.registerJob(currentJob, coroutineId)
+            session.jobMonitor.track(currentJob, jobId, coroutineId)
 
             // Emit lifecycle events (similar to vizLaunch)
             session.send(ctx.coroutineCreated())

@@ -4,7 +4,7 @@ import com.jh.proj.coroutineviz.events.dispatcher.DispatcherSelected
 import com.jh.proj.coroutineviz.events.dispatcher.ThreadAssigned
 import com.jh.proj.coroutineviz.session.VizSession
 import kotlinx.coroutines.*
-import kotlinx.coroutines.test.runTest
+
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
@@ -15,7 +15,7 @@ class VizDispatchersIntegrationTest {
 
     @Test
     @DisplayName("Integration: Complete scenario with mixed dispatchers")
-    fun testCompleteScenarioWithMixedDispatchers() = runTest {
+    fun testCompleteScenarioWithMixedDispatchers() = runBlocking {
         // Simulate a real-world scenario
         val session = VizSession("integration-mixed-dispatchers")
         val dispatchers = VizDispatchers(session, scopeId = "api-handlers")
@@ -241,8 +241,9 @@ class VizDispatchersIntegrationTest {
         val session = VizSession("integration-exception-handling")
         val dispatchers = VizDispatchers(session, scopeId = "exception")
         
-        // Use SupervisorJob to allow observation without test failing
-        val scope = VizScope(session, context = dispatchers.default + SupervisorJob())
+        // Use SupervisorJob + CoroutineExceptionHandler to allow observation without leaking exceptions
+        val exceptionHandler = CoroutineExceptionHandler { _, _ -> /* expected simulated failure */ }
+        val scope = VizScope(session, context = dispatchers.default + SupervisorJob() + exceptionHandler)
         
         val job = scope.vizLaunch(label = "parent") {
             // Child 1: Succeeds on Default
