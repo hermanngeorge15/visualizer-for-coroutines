@@ -8,6 +8,7 @@ import com.jh.proj.coroutineviz.events.dispatcher.ThreadAssigned
 import com.jh.proj.coroutineviz.session.EventContext
 import com.jh.proj.coroutineviz.session.JobStatusMonitor
 import com.jh.proj.coroutineviz.session.VizSession
+import kotlinx.coroutines.channels.Channel
 import com.jh.proj.coroutineviz.session.coroutineBodyCompleted
 import com.jh.proj.coroutineviz.session.coroutineCancelled
 import com.jh.proj.coroutineviz.session.coroutineCompleted
@@ -739,5 +740,47 @@ class VizScope(
             label = label ?: "flowOf(${values.size} items)"
         )
 
+    }
+
+    // ========================================================================
+    // Channel Builders
+    // ========================================================================
+
+    /**
+     * Create an instrumented Channel with visualization tracking.
+     *
+     * This function wraps a Channel to emit events for:
+     * - Channel creation
+     * - Send start/complete/suspend
+     * - Receive start/complete/suspend
+     * - Buffer state changes
+     * - Channel close
+     *
+     * Usage:
+     * ```kotlin
+     * val channel = scope.vizChannel<Int>(Channel.BUFFERED, "my-channel")
+     * channel.send(42)
+     * val value = channel.receive()
+     * channel.close()
+     * ```
+     *
+     * @param capacity Channel capacity (Channel.RENDEZVOUS, Channel.BUFFERED, Channel.CONFLATED, Channel.UNLIMITED, or a specific int)
+     * @param name Optional human-readable name for the channel
+     * @return An InstrumentedChannel that tracks all operations
+     */
+    fun <T> vizChannel(
+        capacity: Int = Channel.RENDEZVOUS,
+        name: String? = null
+    ): InstrumentedChannel<T> {
+        val channelId = "channel-${session.nextSeq()}"
+        val channelType = channelTypeFromCapacity(capacity)
+        return InstrumentedChannel(
+            delegate = Channel(capacity),
+            session = session,
+            channelId = channelId,
+            name = name,
+            capacity = capacity,
+            channelType = channelType
+        )
     }
 }

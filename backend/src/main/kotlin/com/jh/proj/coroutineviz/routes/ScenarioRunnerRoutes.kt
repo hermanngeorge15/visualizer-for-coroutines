@@ -127,6 +127,64 @@ fun Route.registerScenarioRunnerRoutes() {
     }
 
     // ============================================================================
+    // CHANNEL SCENARIOS - Channel communication patterns
+    // ============================================================================
+
+    post("/api/scenarios/channel-rendezvous") {
+        val sessionId = call.request.queryParameters["sessionId"]
+        val session = getOrCreateSession(sessionId)
+
+        logger.info("Running channel rendezvous scenario in session: ${session.sessionId}")
+
+        call.runScenarioWithResponse(session) {
+            ScenarioRunner.runChannelRendezvous(session)
+            ScenarioCompletionResponse(
+                success = true,
+                sessionId = session.sessionId,
+                message = "Channel rendezvous scenario completed",
+                coroutineCount = session.snapshot.coroutines.size,
+                eventCount = session.store.all().size
+            )
+        }
+    }
+
+    post("/api/scenarios/channel-buffered") {
+        val sessionId = call.request.queryParameters["sessionId"]
+        val session = getOrCreateSession(sessionId)
+
+        logger.info("Running channel buffered scenario in session: ${session.sessionId}")
+
+        call.runScenarioWithResponse(session) {
+            ScenarioRunner.runChannelBuffered(session)
+            ScenarioCompletionResponse(
+                success = true,
+                sessionId = session.sessionId,
+                message = "Channel buffered scenario completed",
+                coroutineCount = session.snapshot.coroutines.size,
+                eventCount = session.store.all().size
+            )
+        }
+    }
+
+    post("/api/scenarios/channel-fan-out") {
+        val sessionId = call.request.queryParameters["sessionId"]
+        val session = getOrCreateSession(sessionId)
+
+        logger.info("Running channel fan-out scenario in session: ${session.sessionId}")
+
+        call.runScenarioWithResponse(session) {
+            ScenarioRunner.runChannelFanOut(session)
+            ScenarioCompletionResponse(
+                success = true,
+                sessionId = session.sessionId,
+                message = "Channel fan-out scenario completed",
+                coroutineCount = session.snapshot.coroutines.size,
+                eventCount = session.store.all().size
+            )
+        }
+    }
+
+    // ============================================================================
     // REALISTIC SCENARIOS - Real-world service simulations
     // ============================================================================
 
@@ -272,6 +330,31 @@ fun Route.registerScenarioRunnerRoutes() {
                         "endpoint" to "/api/scenarios/report-generation",
                         "category" to "realistic",
                         "duration" to "~25-35 seconds"
+                    ),
+                    // ========== CHANNEL SCENARIOS ==========
+                    mapOf(
+                        "id" to "channel-rendezvous",
+                        "name" to "Channel Rendezvous",
+                        "description" to "Zero-buffer channel where sender and receiver must meet for each transfer. Demonstrates suspension on both sides.",
+                        "endpoint" to "/api/scenarios/channel-rendezvous",
+                        "category" to "channel",
+                        "duration" to "~2-3 seconds"
+                    ),
+                    mapOf(
+                        "id" to "channel-buffered",
+                        "name" to "Channel Buffered",
+                        "description" to "Buffered channel (capacity 3) showing buffer fill/drain. Producer sends 5 items, consumer starts after delay.",
+                        "endpoint" to "/api/scenarios/channel-buffered",
+                        "category" to "channel",
+                        "duration" to "~2-3 seconds"
+                    ),
+                    mapOf(
+                        "id" to "channel-fan-out",
+                        "name" to "Channel Fan-Out",
+                        "description" to "Fan-out pattern: one producer dispatches 10 tasks, 3 workers compete to receive and process them.",
+                        "endpoint" to "/api/scenarios/channel-fan-out",
+                        "category" to "channel",
+                        "duration" to "~3-5 seconds"
                     ),
                     // ========== BASIC SCENARIOS ==========
                     mapOf(
