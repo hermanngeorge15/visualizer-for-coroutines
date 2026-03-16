@@ -22,3 +22,6 @@ Thumbs.db
 
 # Claude
 .claude/
+
+# Git backups
+.git-backup/
