@@ -1,0 +1,58 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	precomposeunicode = true
+	hooksPath = /Users/jirihermann/Documents/workspace-fullstack/visualizer-for-coroutines/backend/.git/hooks
+[remote "origin"]
+	url = git@github.com:hermanngeorge15/vizcor-be.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+	vscode-merge-base = origin/main
+[branch "feature/event_validation"]
+	remote = origin
+	merge = refs/heads/feature/event_validation
+	vscode-merge-base = origin/main
+[user]
+	name = hermanngeorge15
+	email = hermann.george15@gmail.com
+[branch "feature/2-complete-job-status-tracking-implementation"]
+	vscode-merge-base = origin/main
+	remote = origin
+	merge = refs/heads/feature/2-complete-job-status-tracking-implementation
+[branch "feature/4-vizualization-wrapper-for-flow"]
+	vscode-merge-base = origin/main
+	remote = origin
+	merge = refs/heads/feature/4-vizualization-wrapper-for-flow
+[branch "feature/5-vizualization-wrapper-for-channel"]
+	vscode-merge-base = origin/main
+	remote = origin
+	merge = refs/heads/feature/5-vizualization-wrapper-for-channel
+[branch "stage"]
+	remote = origin
+	merge = refs/heads/stage
+[branch "feature/advanced_topics"]
+	vscode-merge-base = origin/main
+	remote = origin
+	merge = refs/heads/feature/advanced_topics
+[branch "feature/real_world_patterns"]
+	vscode-merge-base = origin/main
+[branch "docs-instrumentation-kdoc"]
+	vscode-merge-base = origin/main
+	vscode-merge-base = origin/main
+[branch "feature/realistic-scenarios"]
+	remote = origin
+	merge = refs/heads/feature/realistic-scenarios
+[branch "feature/contribution"]
+	remote = origin
+	merge = refs/heads/feature/contribution
+[branch "feature/readme"]
+	remote = origin
+	merge = refs/heads/feature/readme
+[branch "feat/integration-tests"]
+	remote = origin
+	merge = refs/heads/feat/integration-tests

@@ -1,0 +1,15 @@
+{
+  "name": "visualizer-for-coroutines",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up",
+    "dev:fe": "cd frontend && pnpm dev",
+    "dev:be": "cd backend && ./gradlew run",
+    "test:fe": "cd frontend && pnpm test",
+    "test:be": "cd backend && ./gradlew test",
+    "test": "pnpm test:fe && pnpm test:be",
+    "lint:fe": "cd frontend && pnpm lint",
+    "build:fe": "cd frontend && pnpm build",
+    "build:be": "cd backend && ./gradlew build"
+  }
+}

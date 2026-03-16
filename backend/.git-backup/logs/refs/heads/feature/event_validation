@@ -1,0 +1,5 @@
+0000000000000000000000000000000000000000 5bbf710b706cd82da96e1abb03f33a0738523d61 Jiří Hermann <jiri.hermann@gendigital.com> 1764145695 +0100	branch: Created from origin/main^0
+5bbf710b706cd82da96e1abb03f33a0738523d61 fc83eb2dd3815c853337961218aa4da18a2f7d24 Jiří Hermann <jiri.hermann@gendigital.com> 1764145712 +0100	commit: prepare event validation if the order was kept
+fc83eb2dd3815c853337961218aa4da18a2f7d24 4f2c7509359fb073e5e8d8d8347fec2125e6142d hermanngeorge15 <hermann.george15@gmail.com> 1764697246 +0100	rebase (finish): refs/heads/feature/event_validation onto 4f2c7509359fb073e5e8d8d8347fec2125e6142d
+4f2c7509359fb073e5e8d8d8347fec2125e6142d 2578adf7df84bd89088eaea5d97978f2c364a8cd hermanngeorge15 <hermann.george15@gmail.com> 1764697274 +0100	rebase (finish): refs/heads/feature/event_validation onto fc83eb2dd3815c853337961218aa4da18a2f7d24
+2578adf7df84bd89088eaea5d97978f2c364a8cd b61efe73cf51f18c2e4d0419cc4efa7dfb48e3d5 hermanngeorge15 <hermann.george15@gmail.com> 1764790654 +0100	commit: provide check system and validator for coroutines

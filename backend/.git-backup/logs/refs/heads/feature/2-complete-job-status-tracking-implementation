@@ -1,0 +1,4 @@
+0000000000000000000000000000000000000000 4f2c7509359fb073e5e8d8d8347fec2125e6142d hermanngeorge15 <hermann.george15@gmail.com> 1764255284 +0100	branch: Created from origin/main^0
+4f2c7509359fb073e5e8d8d8347fec2125e6142d 5208e55e73c4878530a79e5c43b5fa3a279f2b4b hermanngeorge15 <hermann.george15@gmail.com> 1764328031 +0100	commit: provide jobstatusmonitor and provide jobs changed data structure for understanding how coroutines work internally
+5208e55e73c4878530a79e5c43b5fa3a279f2b4b 594ca5ede1922f9ed84a62c40ec4bf4fb1ff11cb hermanngeorge15 <hermann.george15@gmail.com> 1764697176 +0100	commit: provide coroutine extension and examples
+594ca5ede1922f9ed84a62c40ec4bf4fb1ff11cb 0fc0bf7ef6704af7b9aa6572aa1d03a9e3c23b84 hermanngeorge15 <hermann.george15@gmail.com> 1773691678 +0100	commit (merge): Merge origin/main into feature/2-complete-job-status-tracking-implementation
