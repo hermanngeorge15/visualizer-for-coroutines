@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardBody, CardHeader, Chip, Tabs, Tab, Spinner, Button } from '@heroui/react'
-import { FiRefreshCw, FiRadio, FiGitBranch, FiList, FiPlay, FiRotateCcw, FiTrash2, FiLayers } from 'react-icons/fi'
+import { FiRefreshCw, FiRadio, FiGitBranch, FiList, FiPlay, FiRotateCcw, FiTrash2 } from 'react-icons/fi'
 import { useSession, useSessionEvents, useDeleteSession } from '@/hooks/use-sessions'
 import { useEventStream } from '@/hooks/use-event-stream'
 import { useRunScenario } from '@/hooks/use-scenarios'
@@ -9,11 +9,11 @@ import { useEventCategories } from '@/hooks/use-event-categories'
 import { CoroutineTree } from './CoroutineTree'
 import { CoroutineTreeGraph } from './CoroutineTreeGraph'
 import { EventsList } from './EventsList'
-import { JobStateDisplay } from './JobStateDisplay'
 import { StructuredConcurrencyInfo } from './StructuredConcurrencyInfo'
 import { ThreadTimeline } from './ThreadTimeline'
 import { DispatcherOverview } from './DispatcherOverview'
 import { ChannelPanel } from './channels/ChannelPanel'
+import { FlowPanel } from './flow/FlowPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -351,16 +351,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
         {/* Flow tab - shown when flow events are present */}
         {eventCategories.hasFlowOps && (
           <Tab key="flow" title="Flow">
-            <Card className="mt-2">
-              <CardBody>
-                <div className="text-center text-default-400 py-8">
-                  <p className="text-lg font-semibold mb-2">Flow Operator Pipeline</p>
-                  <p className="text-sm">
-                    Flow creation, operator chains, emissions, and backpressure will be visualized here.
-                  </p>
-                </div>
-              </CardBody>
-            </Card>
+            <FlowPanel sessionId={sessionId} />
           </Tab>
         )}
 
@@ -385,7 +376,12 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
           <Tab key="jobs" title={`Jobs (${jobStates.size})`}>
             <Card className="mt-2">
               <CardBody>
-                <JobStateDisplay jobStates={jobStates} />
+                <div className="text-center text-default-400 py-8">
+                  <p className="text-lg font-semibold mb-2">Job Status</p>
+                  <p className="text-sm">
+                    Job state changes and structured concurrency will be displayed here.
+                  </p>
+                </div>
               </CardBody>
             </Card>
           </Tab>
