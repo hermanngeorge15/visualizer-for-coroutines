@@ -15,6 +15,7 @@ import { DispatcherOverview } from './DispatcherOverview'
 import { ChannelPanel } from './channels/ChannelPanel'
 import { FlowPanel } from './flow/FlowPanel'
 import { SyncPanel } from './sync/SyncPanel'
+import { JobPanel } from './jobs/JobPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -366,16 +367,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
         {/* Jobs tab - shown when job events are present */}
         {eventCategories.hasJobs && (
           <Tab key="jobs" title={`Jobs (${jobStates.size})`}>
-            <Card className="mt-2">
-              <CardBody>
-                <div className="text-center text-default-400 py-8">
-                  <p className="text-lg font-semibold mb-2">Job Status</p>
-                  <p className="text-sm">
-                    Job state changes and structured concurrency will be displayed here.
-                  </p>
-                </div>
-              </CardBody>
-            </Card>
+            <JobPanel sessionId={sessionId} />
           </Tab>
         )}
 
