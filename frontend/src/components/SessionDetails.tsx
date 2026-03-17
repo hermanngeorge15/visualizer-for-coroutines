@@ -16,6 +16,7 @@ import { ChannelPanel } from './channels/ChannelPanel'
 import { FlowPanel } from './flow/FlowPanel'
 import { SyncPanel } from './sync/SyncPanel'
 import { JobPanel } from './jobs/JobPanel'
+import { ValidationPanel } from './validation/ValidationPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -373,16 +374,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
 
         {/* Validation tab - always shown */}
         <Tab key="validation" title="Validation">
-          <Card className="mt-2">
-            <CardBody>
-              <div className="text-center text-default-400 py-8">
-                <p className="text-lg font-semibold mb-2">Session Validation</p>
-                <p className="text-sm">
-                  Run validation checks on the session to detect event ordering issues, timing anomalies, and structural problems.
-                </p>
-              </div>
-            </CardBody>
-          </Card>
+          <ValidationPanel sessionId={sessionId} />
         </Tab>
       </Tabs>
     </div>
