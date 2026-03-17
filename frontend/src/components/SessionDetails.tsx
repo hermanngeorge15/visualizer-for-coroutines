@@ -1,17 +1,22 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardBody, CardHeader, Chip, Tabs, Tab, Spinner, Button } from '@heroui/react'
-import { FiRefreshCw, FiRadio, FiGitBranch, FiList, FiPlay, FiRotateCcw, FiTrash2, FiLayers } from 'react-icons/fi'
+import { FiRefreshCw, FiRadio, FiGitBranch, FiList, FiPlay, FiRotateCcw, FiTrash2 } from 'react-icons/fi'
 import { useSession, useSessionEvents, useDeleteSession } from '@/hooks/use-sessions'
 import { useEventStream } from '@/hooks/use-event-stream'
 import { useRunScenario } from '@/hooks/use-scenarios'
 import { useThreadActivity } from '@/hooks/use-thread-activity'
+import { useEventCategories } from '@/hooks/use-event-categories'
 import { CoroutineTree } from './CoroutineTree'
 import { CoroutineTreeGraph } from './CoroutineTreeGraph'
 import { EventsList } from './EventsList'
-import { JobStateDisplay } from './JobStateDisplay'
 import { StructuredConcurrencyInfo } from './StructuredConcurrencyInfo'
 import { ThreadTimeline } from './ThreadTimeline'
 import { DispatcherOverview } from './DispatcherOverview'
+import { ChannelPanel } from './channels/ChannelPanel'
+import { FlowPanel } from './flow/FlowPanel'
+import { SyncPanel } from './sync/SyncPanel'
+import { JobPanel } from './jobs/JobPanel'
+import { ValidationPanel } from './validation/ValidationPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -26,6 +31,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
   const { data: session, isLoading, refetch } = useSession(sessionId)
   const { data: storedEvents } = useSessionEvents(sessionId)
   const { data: threadActivity } = useThreadActivity(sessionId)
+  const eventCategories = useEventCategories(sessionId)
   const [streamEnabled, setStreamEnabled] = useState(false)
   const [viewMode, setViewMode] = useState<'graph' | 'list'>('graph')
   const [autoRefresh, setAutoRefresh] = useState(false)
@@ -91,7 +97,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
 
   const handleRunScenario = async () => {
     if (!scenarioId) return
-    
+
     try {
       await runScenario.mutateAsync({ scenarioId, sessionId })
       // Refetch immediately after running
@@ -109,7 +115,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
     try {
       // Delete current session
       await deleteSession.mutateAsync(sessionId)
-      
+
       // Navigate back to scenarios or create new session
       if (hasScenario) {
         navigate({ to: '/scenarios' })
@@ -219,7 +225,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
                 </AnimatePresence>
               )}
             </div>
-            
+
             {/* View Mode Toggle */}
             <div className="flex gap-2">
               <Button
@@ -253,8 +259,8 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
               <div>
                 <h3 className="mb-1 text-lg font-semibold">Scenario Controls</h3>
                 <p className="text-sm text-default-500">
-                  {hasStarted 
-                    ? 'Scenario is running or has completed' 
+                  {hasStarted
+                    ? 'Scenario is running or has completed'
                     : 'Ready to run the scenario'}
                 </p>
               </div>
@@ -298,62 +304,79 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
       {/* Structured Concurrency Info - Show when session has coroutines */}
       {session.coroutineCount > 0 && <StructuredConcurrencyInfo />}
 
-      {/* Tabs */}
+      {/* Main Tabs */}
       <Tabs aria-label="Session tabs" variant="bordered" fullWidth>
-        <Tab key="tree" title="Coroutine Visualization">
-          <Card>
-            <CardBody className="overflow-auto">
-              {viewMode === 'graph' ? (
-                <CoroutineTreeGraph coroutines={session.coroutines} />
-              ) : (
-                <CoroutineTree coroutines={session.coroutines} />
-              )}
-            </CardBody>
-          </Card>
-        </Tab>
-        <Tab key="job-states" title={`Job States (${jobStates.size})`}>
-          <Card>
-            <CardBody>
-              <JobStateDisplay jobStates={jobStates} />
-            </CardBody>
-          </Card>
-        </Tab>
-        <Tab key="events" title={`Events (${allEvents.length})`}>
-          <Card>
-            <CardBody>
-              <EventsList events={allEvents} />
-            </CardBody>
-          </Card>
-        </Tab>
-        <Tab key="threads" title="Thread Activity">
-          {threadActivity ? (
-            <ThreadTimeline threadActivity={threadActivity} />
-          ) : (
+        {/* Overview tab - contains existing content */}
+        <Tab key="overview" title="Overview">
+          <div className="space-y-4 pt-2">
             <Card>
-              <CardBody>
-                <div className="text-center text-default-400 py-4">
-                  <Spinner size="sm" className="mb-2" />
-                  <p>Loading thread activity...</p>
-                </div>
+              <CardBody className="overflow-auto">
+                {viewMode === 'graph' ? (
+                  <CoroutineTreeGraph coroutines={session.coroutines} />
+                ) : (
+                  <CoroutineTree coroutines={session.coroutines} />
+                )}
               </CardBody>
             </Card>
-          )}
-        </Tab>
-        <Tab 
-          key="dispatchers" 
-          title={
-            <div className="flex items-center gap-2">
-              <FiLayers />
-              <span>Dispatchers</span>
+
+            <Card>
+              <CardBody>
+                <EventsList events={allEvents} />
+              </CardBody>
+            </Card>
+
+            {threadActivity ? (
+              <ThreadTimeline threadActivity={threadActivity} />
+            ) : (
+              <Card>
+                <CardBody>
+                  <div className="text-center text-default-400 py-4">
+                    <Spinner size="sm" className="mb-2" />
+                    <p>Loading thread activity...</p>
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+
+            <div className="py-2">
+              <DispatcherOverview sessionId={sessionId} />
             </div>
-          }
-        >
-          <div className="py-4">
-            <DispatcherOverview sessionId={sessionId} />
           </div>
+        </Tab>
+
+        {/* Channels tab - shown when channel events are present */}
+        {eventCategories.hasChannels && (
+          <Tab key="channels" title="Channels">
+            <ChannelPanel sessionId={sessionId} />
+          </Tab>
+        )}
+
+        {/* Flow tab - shown when flow events are present */}
+        {eventCategories.hasFlowOps && (
+          <Tab key="flow" title="Flow">
+            <FlowPanel sessionId={sessionId} />
+          </Tab>
+        )}
+
+        {/* Sync tab - shown when sync primitive events are present */}
+        {eventCategories.hasSyncPrimitives && (
+          <Tab key="sync" title="Sync">
+            <SyncPanel sessionId={sessionId} />
+          </Tab>
+        )}
+
+        {/* Jobs tab - shown when job events are present */}
+        {eventCategories.hasJobs && (
+          <Tab key="jobs" title={`Jobs (${jobStates.size})`}>
+            <JobPanel sessionId={sessionId} />
+          </Tab>
+        )}
+
+        {/* Validation tab - always shown */}
+        <Tab key="validation" title="Validation">
+          <ValidationPanel sessionId={sessionId} />
         </Tab>
       </Tabs>
     </div>
   )
 }
-

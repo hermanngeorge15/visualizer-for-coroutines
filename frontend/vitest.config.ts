@@ -17,6 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '@vizcor/api-types': resolve(__dirname, '../shared/api-types'),
     },
   },
 })

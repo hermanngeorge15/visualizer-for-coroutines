@@ -1,4 +1,157 @@
 // API Types matching backend DTOs
+//
+// This module re-exports shared event types from @vizcor/api-types where possible,
+// and provides frontend-specific types for API responses, UI state, and compatibility.
+
+// Re-export all shared event types and interfaces
+import type {
+  BaseVizEvent as SharedBaseVizEvent,
+  BaseCoroutineEvent as SharedBaseCoroutineEvent,
+  SuspensionPoint as SharedSuspensionPoint,
+  VizEventKind as SharedVizEventKind,
+  VizEvent as SharedVizEvent,
+  // Coroutine lifecycle
+  CoroutineCreated,
+  CoroutineStarted,
+  CoroutineBodyCompleted,
+  CoroutineSuspended,
+  CoroutineResumed,
+  CoroutineCompleted,
+  CoroutineCancelled,
+  CoroutineFailed,
+  // Job events
+  JobStateChanged,
+  JobJoinRequested,
+  JobJoinCompleted,
+  JobCancellationRequested,
+  // Structured concurrency
+  WaitingForChildren,
+  // Dispatcher
+  DispatcherSelected,
+  ThreadAssigned,
+  // Deferred
+  DeferredAwaitStarted,
+  DeferredAwaitCompleted,
+  DeferredValueAvailable,
+  // Flow events
+  FlowCreated,
+  FlowValueEmitted,
+  FlowCollectionStarted,
+  FlowCollectionCompleted,
+  FlowCollectionCancelled,
+  FlowOperatorApplied,
+  FlowValueFiltered,
+  FlowValueTransformed,
+  FlowBackpressure,
+  FlowBufferOverflow,
+  SharedFlowEmission,
+  SharedFlowSubscription,
+  StateFlowValueChanged,
+  // Channel events
+  ChannelCreated,
+  ChannelSendStarted,
+  ChannelSendCompleted,
+  ChannelSendSuspended,
+  ChannelReceiveStarted,
+  ChannelReceiveCompleted,
+  ChannelReceiveSuspended,
+  ChannelClosed,
+  ChannelBufferStateChanged,
+  // Mutex events
+  MutexCreated,
+  MutexLockRequested,
+  MutexLockAcquired,
+  MutexUnlocked,
+  MutexTryLockFailed,
+  MutexQueueChanged,
+  // Semaphore events
+  SemaphoreCreated,
+  SemaphoreAcquireRequested,
+  SemaphorePermitAcquired,
+  SemaphorePermitReleased,
+  SemaphoreTryAcquireFailed,
+  SemaphoreStateChanged,
+  // Deadlock events
+  DeadlockDetected,
+  PotentialDeadlockWarning,
+} from '@vizcor/api-types'
+
+// Re-export shared types for consumers
+export type {
+  SharedBaseVizEvent,
+  SharedBaseCoroutineEvent,
+  SharedSuspensionPoint,
+  SharedVizEventKind,
+  SharedVizEvent,
+  // Coroutine lifecycle
+  CoroutineCreated,
+  CoroutineStarted,
+  CoroutineBodyCompleted,
+  CoroutineSuspended,
+  CoroutineResumed,
+  CoroutineCompleted,
+  CoroutineCancelled,
+  CoroutineFailed,
+  // Job events
+  JobStateChanged,
+  JobJoinRequested,
+  JobJoinCompleted,
+  JobCancellationRequested,
+  // Structured concurrency
+  WaitingForChildren,
+  // Dispatcher
+  DispatcherSelected,
+  ThreadAssigned,
+  // Deferred
+  DeferredAwaitStarted,
+  DeferredAwaitCompleted,
+  DeferredValueAvailable,
+  // Flow events
+  FlowCreated,
+  FlowValueEmitted,
+  FlowCollectionStarted,
+  FlowCollectionCompleted,
+  FlowCollectionCancelled,
+  FlowOperatorApplied,
+  FlowValueFiltered,
+  FlowValueTransformed,
+  FlowBackpressure,
+  FlowBufferOverflow,
+  SharedFlowEmission,
+  SharedFlowSubscription,
+  StateFlowValueChanged,
+  // Channel events
+  ChannelCreated,
+  ChannelSendStarted,
+  ChannelSendCompleted,
+  ChannelSendSuspended,
+  ChannelReceiveStarted,
+  ChannelReceiveCompleted,
+  ChannelReceiveSuspended,
+  ChannelClosed,
+  ChannelBufferStateChanged,
+  // Mutex events
+  MutexCreated,
+  MutexLockRequested,
+  MutexLockAcquired,
+  MutexUnlocked,
+  MutexTryLockFailed,
+  MutexQueueChanged,
+  // Semaphore events
+  SemaphoreCreated,
+  SemaphoreAcquireRequested,
+  SemaphorePermitAcquired,
+  SemaphorePermitReleased,
+  SemaphoreTryAcquireFailed,
+  SemaphoreStateChanged,
+  // Deadlock events
+  DeadlockDetected,
+  PotentialDeadlockWarning,
+}
+
+// ---------------------------------------------------------------------------
+// Frontend-specific types (kept for backwards compatibility)
+// ---------------------------------------------------------------------------
 
 export enum CoroutineState {
   CREATED = 'CREATED',
@@ -80,8 +233,12 @@ export interface ScenarioExecutionResponse {
   errors?: string[]
 }
 
-// Event Types
-export type VizEventKind = 
+// ---------------------------------------------------------------------------
+// Event Types (frontend-local, compatible with existing consumers)
+// ---------------------------------------------------------------------------
+
+// Frontend event kind union - includes both legacy kebab-case and shared PascalCase kinds
+export type VizEventKind =
   | 'coroutine.created'
   | 'coroutine.started'
   | 'coroutine.suspended'
@@ -100,6 +257,57 @@ export type VizEventKind =
   | 'JobJoinRequested'
   | 'JobJoinCompleted'
   | 'WaitingForChildren'
+  // New shared event kinds (PascalCase from shared types)
+  | 'CoroutineCreated'
+  | 'CoroutineStarted'
+  | 'CoroutineBodyCompleted'
+  | 'CoroutineSuspended'
+  | 'CoroutineResumed'
+  | 'CoroutineCompleted'
+  | 'CoroutineCancelled'
+  | 'CoroutineFailed'
+  | 'ThreadAssigned'
+  // Flow event kinds
+  | 'FlowCreated'
+  | 'FlowValueEmitted'
+  | 'FlowCollectionStarted'
+  | 'FlowCollectionCompleted'
+  | 'FlowCollectionCancelled'
+  | 'FlowOperatorApplied'
+  | 'FlowValueFiltered'
+  | 'FlowValueTransformed'
+  | 'FlowBackpressure'
+  | 'FlowBufferOverflow'
+  | 'SharedFlowEmission'
+  | 'SharedFlowSubscription'
+  | 'StateFlowValueChanged'
+  // Channel event kinds
+  | 'ChannelCreated'
+  | 'ChannelSendStarted'
+  | 'ChannelSendCompleted'
+  | 'ChannelSendSuspended'
+  | 'ChannelReceiveStarted'
+  | 'ChannelReceiveCompleted'
+  | 'ChannelReceiveSuspended'
+  | 'ChannelClosed'
+  | 'ChannelBufferStateChanged'
+  // Mutex event kinds
+  | 'MutexCreated'
+  | 'MutexLockRequested'
+  | 'MutexLockAcquired'
+  | 'MutexUnlocked'
+  | 'MutexTryLockFailed'
+  | 'MutexQueueChanged'
+  // Semaphore event kinds
+  | 'SemaphoreCreated'
+  | 'SemaphoreAcquireRequested'
+  | 'SemaphorePermitAcquired'
+  | 'SemaphorePermitReleased'
+  | 'SemaphoreTryAcquireFailed'
+  | 'SemaphoreStateChanged'
+  // Deadlock event kinds
+  | 'DeadlockDetected'
+  | 'PotentialDeadlockWarning'
 
 export interface BaseVizEvent {
   sessionId: string
@@ -181,10 +389,10 @@ export interface DeferredAwaitCompletedEvent extends CoroutineEvent {
   awaitingCoroutineId: string
 }
 
-export type VizEvent = 
-  | CoroutineEvent 
+export type VizEvent =
+  | CoroutineEvent
   | CoroutineSuspendedEvent
-  | JobStateChangedEvent 
+  | JobStateChangedEvent
   | JobCancellationRequestedEvent
   | JobJoinRequestedEvent
   | JobJoinCompletedEvent
@@ -311,7 +519,7 @@ export interface TimelineEvent {
   dispatcherId?: string | null
   dispatcherName?: string | null
   suspensionPoint?: SuspensionPoint | null
-  duration?: number | null  // For computed durations (suspend → resume)
+  duration?: number | null  // For computed durations (suspend -> resume)
 }
 
 // Thread Activity - Enhanced structure
@@ -344,3 +552,153 @@ export interface DispatcherInfo {
   queueDepth?: number | null
 }
 
+// ---------------------------------------------------------------------------
+// NEW: Event category union types (from shared @vizcor/api-types)
+// ---------------------------------------------------------------------------
+
+/** Union of all channel-related events */
+export type ChannelEvent =
+  | ChannelCreated
+  | ChannelSendStarted
+  | ChannelSendCompleted
+  | ChannelSendSuspended
+  | ChannelReceiveStarted
+  | ChannelReceiveCompleted
+  | ChannelReceiveSuspended
+  | ChannelClosed
+  | ChannelBufferStateChanged
+
+/** Union of all flow operator-related events */
+export type FlowOperatorEvent =
+  | FlowCreated
+  | FlowValueEmitted
+  | FlowCollectionStarted
+  | FlowCollectionCompleted
+  | FlowCollectionCancelled
+  | FlowOperatorApplied
+  | FlowValueFiltered
+  | FlowValueTransformed
+  | FlowBackpressure
+  | FlowBufferOverflow
+  | SharedFlowEmission
+  | SharedFlowSubscription
+  | StateFlowValueChanged
+
+/** Union of all synchronization primitive events (mutex + semaphore + deadlock) */
+export type SyncEvent =
+  | MutexCreated
+  | MutexLockRequested
+  | MutexLockAcquired
+  | MutexUnlocked
+  | MutexTryLockFailed
+  | MutexQueueChanged
+  | SemaphoreCreated
+  | SemaphoreAcquireRequested
+  | SemaphorePermitAcquired
+  | SemaphorePermitReleased
+  | SemaphoreTryAcquireFailed
+  | SemaphoreStateChanged
+  | DeadlockDetected
+  | PotentialDeadlockWarning
+
+/** Validation result from the backend validation API */
+export interface ValidationResult {
+  sessionId: string
+  valid: boolean
+  errors: ValidationError[]
+  warnings: ValidationWarning[]
+  timing: TimingReport
+}
+
+export interface ValidationError {
+  code: string
+  message: string
+  eventSeq?: number
+  coroutineId?: string
+}
+
+export interface ValidationWarning {
+  code: string
+  message: string
+  eventSeq?: number
+  coroutineId?: string
+  suggestion?: string
+}
+
+/** Timing report returned by the validation API */
+export interface TimingReport {
+  totalDurationNanos: number
+  eventCount: number
+  coroutineCount: number
+  avgEventIntervalNanos: number
+  maxGapNanos: number
+  suspendResumeLatencies: LatencyBucket[]
+}
+
+export interface LatencyBucket {
+  label: string
+  minNanos: number
+  maxNanos: number
+  count: number
+}
+
+// ---------------------------------------------------------------------------
+// Event kind constants for category detection
+// ---------------------------------------------------------------------------
+
+/** Channel event kinds for use in category detection */
+export const CHANNEL_EVENT_KINDS: ReadonlySet<string> = new Set([
+  'ChannelCreated',
+  'ChannelSendStarted',
+  'ChannelSendCompleted',
+  'ChannelSendSuspended',
+  'ChannelReceiveStarted',
+  'ChannelReceiveCompleted',
+  'ChannelReceiveSuspended',
+  'ChannelClosed',
+  'ChannelBufferStateChanged',
+])
+
+/** Flow event kinds for use in category detection */
+export const FLOW_EVENT_KINDS: ReadonlySet<string> = new Set([
+  'FlowCreated',
+  'FlowValueEmitted',
+  'FlowCollectionStarted',
+  'FlowCollectionCompleted',
+  'FlowCollectionCancelled',
+  'FlowOperatorApplied',
+  'FlowValueFiltered',
+  'FlowValueTransformed',
+  'FlowBackpressure',
+  'FlowBufferOverflow',
+  'SharedFlowEmission',
+  'SharedFlowSubscription',
+  'StateFlowValueChanged',
+])
+
+/** Sync primitive event kinds for use in category detection */
+export const SYNC_EVENT_KINDS: ReadonlySet<string> = new Set([
+  'MutexCreated',
+  'MutexLockRequested',
+  'MutexLockAcquired',
+  'MutexUnlocked',
+  'MutexTryLockFailed',
+  'MutexQueueChanged',
+  'SemaphoreCreated',
+  'SemaphoreAcquireRequested',
+  'SemaphorePermitAcquired',
+  'SemaphorePermitReleased',
+  'SemaphoreTryAcquireFailed',
+  'SemaphoreStateChanged',
+  'DeadlockDetected',
+  'PotentialDeadlockWarning',
+])
+
+/** Job event kinds for use in category detection */
+export const JOB_EVENT_KINDS: ReadonlySet<string> = new Set([
+  'JobStateChanged',
+  'JobJoinRequested',
+  'JobJoinCompleted',
+  'JobCancellationRequested',
+  'WaitingForChildren',
+])

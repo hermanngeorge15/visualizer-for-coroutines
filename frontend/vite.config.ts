@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
-import path from 'path'
+import path, { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@vizcor/api-types': resolve(__dirname, '../shared/api-types'),
     },
   },
   server: {

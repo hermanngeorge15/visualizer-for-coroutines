@@ -1,0 +1,142 @@
+import { useState } from 'react'
+import { Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { FiRadio, FiHash } from 'react-icons/fi'
+import { useChannelEvents } from '@/hooks/use-channel-events'
+import { ChannelBufferGauge } from './ChannelBufferGauge'
+import { ChannelTimeline } from './ChannelTimeline'
+import { ChannelProducerConsumer } from './ChannelProducerConsumer'
+
+interface ChannelPanelProps {
+  sessionId: string
+}
+
+export function ChannelPanel({ sessionId }: ChannelPanelProps) {
+  const { channels, eventsByChannel, bufferStates } = useChannelEvents(sessionId)
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
+
+  // Auto-select first channel when data arrives
+  const effectiveSelectedId =
+    selectedChannelId && channels.some((c) => c.channelId === selectedChannelId)
+      ? selectedChannelId
+      : channels.length > 0
+        ? channels[0]!.channelId
+        : null
+
+  if (channels.length === 0) {
+    return (
+      <Card className="mt-2" data-testid="channel-panel-empty">
+        <CardBody>
+          <div className="text-center text-default-400 py-8">
+            <FiRadio className="w-8 h-8 mx-auto mb-3 opacity-50" />
+            <p className="text-lg font-semibold mb-2">No Channel Activity</p>
+            <p className="text-sm">
+              Channel events will appear here once send/receive operations occur.
+            </p>
+          </div>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  const selectedChannel = channels.find((c) => c.channelId === effectiveSelectedId) ?? null
+  const selectedEvents = effectiveSelectedId
+    ? eventsByChannel.get(effectiveSelectedId) ?? []
+    : []
+  const selectedBuffer = effectiveSelectedId
+    ? bufferStates.get(effectiveSelectedId) ?? null
+    : null
+
+  return (
+    <div className="space-y-4 mt-2" data-testid="channel-panel">
+      {/* Channel list */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FiHash className="w-4 h-4" />
+            <h3 className="font-semibold">Channels ({channels.length})</h3>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="flex flex-wrap gap-2" data-testid="channel-list">
+            {channels.map((ch) => {
+              const isSelected = ch.channelId === effectiveSelectedId
+              const evtCount = eventsByChannel.get(ch.channelId)?.length ?? 0
+              return (
+                <button
+                  key={ch.channelId}
+                  onClick={() => setSelectedChannelId(ch.channelId)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                    isSelected
+                      ? 'border-primary bg-primary/10'
+                      : 'border-default-200 hover:bg-default-100'
+                  }`}
+                  data-testid={`channel-selector-${ch.channelId}`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      ch.isClosed ? 'bg-danger' : 'bg-success'
+                    }`}
+                  />
+                  <span className="text-sm font-mono">
+                    {ch.name || ch.channelId}
+                  </span>
+                  <Chip size="sm" variant="flat">
+                    {evtCount}
+                  </Chip>
+                </button>
+              )
+            })}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Selected channel detail */}
+      {selectedChannel && (
+        <>
+          {/* Buffer gauge */}
+          <Card>
+            <CardHeader>
+              <h4 className="font-semibold">
+                Buffer State: {selectedChannel.name || selectedChannel.channelId}
+              </h4>
+            </CardHeader>
+            <CardBody>
+              <ChannelBufferGauge
+                currentSize={selectedBuffer?.currentSize ?? selectedChannel.currentSize}
+                capacity={selectedBuffer?.capacity ?? selectedChannel.capacity}
+                channelType={selectedChannel.channelType}
+                isClosed={selectedChannel.isClosed}
+              />
+            </CardBody>
+          </Card>
+
+          {/* Producer / Consumer flow diagram */}
+          <Card>
+            <CardHeader>
+              <h4 className="font-semibold">Producer / Consumer Flow</h4>
+            </CardHeader>
+            <CardBody>
+              <ChannelProducerConsumer channel={selectedChannel} />
+            </CardBody>
+          </Card>
+
+          {/* Timeline */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between w-full">
+                <h4 className="font-semibold">Event Timeline</h4>
+                <Chip size="sm" variant="flat" color="primary">
+                  {selectedEvents.length} events
+                </Chip>
+              </div>
+            </CardHeader>
+            <Divider />
+            <CardBody>
+              <ChannelTimeline events={selectedEvents} />
+            </CardBody>
+          </Card>
+        </>
+      )}
+    </div>
+  )
+}
