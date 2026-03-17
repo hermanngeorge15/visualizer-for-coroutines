@@ -1,4 +1,5 @@
 import { Chip } from '@heroui/react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface WaitQueueEntry {
   id: string
@@ -23,16 +24,22 @@ export function WaitQueueList({ queue, title = 'Wait Queue' }: WaitQueueListProp
     <div className="space-y-1" data-testid="wait-queue-list">
       <div className="text-xs text-default-500 font-semibold">{title} ({queue.length})</div>
       <div className="space-y-1 max-h-32 overflow-y-auto">
-        {queue.map((entry, idx) => (
-          <div
-            key={`${entry.id}-${idx}`}
-            className="flex items-center gap-2 rounded bg-default-50 px-2 py-1 text-xs"
-            data-testid="wait-queue-entry"
-          >
-            <Chip size="sm" variant="flat" color="warning">#{idx + 1}</Chip>
-            <span className="font-mono truncate">{entry.label || entry.id}</span>
-          </div>
-        ))}
+        <AnimatePresence mode="popLayout">
+          {queue.map((entry, idx) => (
+            <motion.div
+              key={`${entry.id}-${idx}`}
+              className="flex items-center gap-2 rounded bg-default-50 px-2 py-1 text-xs"
+              data-testid="wait-queue-entry"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2, delay: idx * 0.03 }}
+            >
+              <Chip size="sm" variant="flat" color="warning">#{idx + 1}</Chip>
+              <span className="font-mono truncate">{entry.label || entry.id}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   )

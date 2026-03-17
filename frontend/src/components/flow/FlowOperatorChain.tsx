@@ -1,4 +1,5 @@
 import { Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
 import type { FlowOperator } from '@/hooks/use-flow-events'
 
@@ -33,10 +34,28 @@ export function FlowOperatorChain({ operators, flowLabel }: FlowOperatorChainPro
         <div className="text-xs text-default-500 font-mono mb-1">{flowLabel}</div>
       )}
       <div className="flex flex-wrap items-center gap-1">
-        <Chip size="sm" variant="bordered" color="default">source</Chip>
-        {sorted.map((op) => (
-          <div key={`${op.flowId}-${op.operatorIndex}`} className="flex items-center gap-1">
-            <FiArrowRight className="text-default-400 shrink-0" size={14} />
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Chip size="sm" variant="bordered" color="default">source</Chip>
+        </motion.div>
+        {sorted.map((op, index) => (
+          <motion.div
+            key={`${op.flowId}-${op.operatorIndex}`}
+            className="flex items-center gap-1"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: (index + 1) * 0.08 }}
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.2, delay: (index + 1) * 0.08 }}
+            >
+              <FiArrowRight className="text-default-400 shrink-0" size={14} />
+            </motion.div>
             <Chip
               size="sm"
               variant="flat"
@@ -45,10 +64,23 @@ export function FlowOperatorChain({ operators, flowLabel }: FlowOperatorChainPro
               {op.operatorName}
               {op.label ? ` (${op.label})` : ''}
             </Chip>
-          </div>
+          </motion.div>
         ))}
-        <FiArrowRight className="text-default-400 shrink-0" size={14} />
-        <Chip size="sm" variant="bordered" color="success">collect</Chip>
+        <motion.div
+          className="flex items-center gap-1"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: (sorted.length + 1) * 0.08 }}
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.2, delay: (sorted.length + 1) * 0.08 }}
+          >
+            <FiArrowRight className="text-default-400 shrink-0" size={14} />
+          </motion.div>
+          <Chip size="sm" variant="bordered" color="success">collect</Chip>
+        </motion.div>
       </div>
     </div>
   )

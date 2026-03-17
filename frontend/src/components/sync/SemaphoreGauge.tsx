@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 import type { SemaphoreState } from '@/hooks/use-sync-events'
 
 interface SemaphoreGaugeProps {
@@ -19,6 +20,11 @@ export function SemaphoreGauge({ semaphore }: SemaphoreGaugeProps) {
     ? (usedPermits / semaphore.totalPermits) * 100
     : 0
   const color = getGaugeColor(semaphore.availablePermits, semaphore.totalPermits)
+
+  // SVG arc calculation
+  const circumference = 2 * Math.PI * 40 // r=40
+  const dashArray = (percent / 100) * circumference
+  const dashOffset = circumference - dashArray
 
   return (
     <Card shadow="sm" data-testid="semaphore-gauge">
@@ -50,15 +56,18 @@ export function SemaphoreGauge({ semaphore }: SemaphoreGaugeProps) {
                 strokeWidth="8"
                 className="text-default-200"
               />
-              {/* Used permits arc */}
-              <circle
+              {/* Used permits arc - animated */}
+              <motion.circle
                 cx="50"
                 cy="50"
                 r="40"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="8"
-                strokeDasharray={`${percent * 2.51} ${251 - percent * 2.51}`}
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset: dashOffset }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
                 className={
                   color === 'danger'
                     ? 'text-danger'
@@ -70,7 +79,14 @@ export function SemaphoreGauge({ semaphore }: SemaphoreGaugeProps) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-lg font-bold">{usedPermits}</div>
+              <motion.div
+                className="text-lg font-bold"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.3 }}
+              >
+                {usedPermits}
+              </motion.div>
               <div className="text-[10px] text-default-400">used</div>
             </div>
           </div>

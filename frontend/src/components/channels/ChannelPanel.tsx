@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FiRadio, FiHash } from 'react-icons/fi'
 import { useChannelEvents } from '@/hooks/use-channel-events'
 import { ChannelBufferGauge } from './ChannelBufferGauge'
@@ -24,17 +25,23 @@ export function ChannelPanel({ sessionId }: ChannelPanelProps) {
 
   if (channels.length === 0) {
     return (
-      <Card className="mt-2" data-testid="channel-panel-empty">
-        <CardBody>
-          <div className="text-center text-default-400 py-8">
-            <FiRadio className="w-8 h-8 mx-auto mb-3 opacity-50" />
-            <p className="text-lg font-semibold mb-2">No Channel Activity</p>
-            <p className="text-sm">
-              Channel events will appear here once send/receive operations occur.
-            </p>
-          </div>
-        </CardBody>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Card className="mt-2" data-testid="channel-panel-empty">
+          <CardBody>
+            <div className="text-center text-default-400 py-8">
+              <FiRadio className="w-8 h-8 mx-auto mb-3 opacity-50" />
+              <p className="text-lg font-semibold mb-2">No Channel Activity</p>
+              <p className="text-sm">
+                Channel events will appear here once send/receive operations occur.
+              </p>
+            </div>
+          </CardBody>
+        </Card>
+      </motion.div>
     )
   }
 
@@ -47,7 +54,13 @@ export function ChannelPanel({ sessionId }: ChannelPanelProps) {
     : null
 
   return (
-    <div className="space-y-4 mt-2" data-testid="channel-panel">
+    <motion.div
+      className="space-y-4 mt-2"
+      data-testid="channel-panel"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
       {/* Channel list */}
       <Card>
         <CardHeader>
@@ -58,11 +71,11 @@ export function ChannelPanel({ sessionId }: ChannelPanelProps) {
         </CardHeader>
         <CardBody>
           <div className="flex flex-wrap gap-2" data-testid="channel-list">
-            {channels.map((ch) => {
+            {channels.map((ch, index) => {
               const isSelected = ch.channelId === effectiveSelectedId
               const evtCount = eventsByChannel.get(ch.channelId)?.length ?? 0
               return (
-                <button
+                <motion.button
                   key={ch.channelId}
                   onClick={() => setSelectedChannelId(ch.channelId)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
@@ -71,6 +84,11 @@ export function ChannelPanel({ sessionId }: ChannelPanelProps) {
                       : 'border-default-200 hover:bg-default-100'
                   }`}
                   data-testid={`channel-selector-${ch.channelId}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <div
                     className={`w-2 h-2 rounded-full ${
@@ -83,7 +101,7 @@ export function ChannelPanel({ sessionId }: ChannelPanelProps) {
                   <Chip size="sm" variant="flat">
                     {evtCount}
                   </Chip>
-                </button>
+                </motion.button>
               )
             })}
           </div>
@@ -91,52 +109,61 @@ export function ChannelPanel({ sessionId }: ChannelPanelProps) {
       </Card>
 
       {/* Selected channel detail */}
-      {selectedChannel && (
-        <>
-          {/* Buffer gauge */}
-          <Card>
-            <CardHeader>
-              <h4 className="font-semibold">
-                Buffer State: {selectedChannel.name || selectedChannel.channelId}
-              </h4>
-            </CardHeader>
-            <CardBody>
-              <ChannelBufferGauge
-                currentSize={selectedBuffer?.currentSize ?? selectedChannel.currentSize}
-                capacity={selectedBuffer?.capacity ?? selectedChannel.capacity}
-                channelType={selectedChannel.channelType}
-                isClosed={selectedChannel.isClosed}
-              />
-            </CardBody>
-          </Card>
+      <AnimatePresence mode="wait">
+        {selectedChannel && (
+          <motion.div
+            key={effectiveSelectedId}
+            className="space-y-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Buffer gauge */}
+            <Card>
+              <CardHeader>
+                <h4 className="font-semibold">
+                  Buffer State: {selectedChannel.name || selectedChannel.channelId}
+                </h4>
+              </CardHeader>
+              <CardBody>
+                <ChannelBufferGauge
+                  currentSize={selectedBuffer?.currentSize ?? selectedChannel.currentSize}
+                  capacity={selectedBuffer?.capacity ?? selectedChannel.capacity}
+                  channelType={selectedChannel.channelType}
+                  isClosed={selectedChannel.isClosed}
+                />
+              </CardBody>
+            </Card>
 
-          {/* Producer / Consumer flow diagram */}
-          <Card>
-            <CardHeader>
-              <h4 className="font-semibold">Producer / Consumer Flow</h4>
-            </CardHeader>
-            <CardBody>
-              <ChannelProducerConsumer channel={selectedChannel} />
-            </CardBody>
-          </Card>
+            {/* Producer / Consumer flow diagram */}
+            <Card>
+              <CardHeader>
+                <h4 className="font-semibold">Producer / Consumer Flow</h4>
+              </CardHeader>
+              <CardBody>
+                <ChannelProducerConsumer channel={selectedChannel} />
+              </CardBody>
+            </Card>
 
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between w-full">
-                <h4 className="font-semibold">Event Timeline</h4>
-                <Chip size="sm" variant="flat" color="primary">
-                  {selectedEvents.length} events
-                </Chip>
-              </div>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              <ChannelTimeline events={selectedEvents} />
-            </CardBody>
-          </Card>
-        </>
-      )}
-    </div>
+            {/* Timeline */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between w-full">
+                  <h4 className="font-semibold">Event Timeline</h4>
+                  <Chip size="sm" variant="flat" color="primary">
+                    {selectedEvents.length} events
+                  </Chip>
+                </div>
+              </CardHeader>
+              <Divider />
+              <CardBody>
+                <ChannelTimeline events={selectedEvents} />
+              </CardBody>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

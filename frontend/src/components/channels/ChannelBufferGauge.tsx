@@ -1,4 +1,5 @@
 import { Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 
 interface ChannelBufferGaugeProps {
   currentSize: number
@@ -57,7 +58,13 @@ export function ChannelBufferGauge({
   const barColorName = getBarColorName(fillPercent)
 
   return (
-    <div className="space-y-2" data-testid="channel-buffer-gauge">
+    <motion.div
+      className="space-y-2"
+      data-testid="channel-buffer-gauge"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, delay: 0.1 }}
+    >
       {/* Header: type badge + closed indicator */}
       <div className="flex items-center justify-between">
         <Chip
@@ -83,9 +90,11 @@ export function ChannelBufferGauge({
       ) : (
         <>
           <div className="flex h-4 rounded-full overflow-hidden bg-default-100" data-testid="buffer-bar">
-            <div
-              className={`${barColor} transition-all duration-300`}
-              style={{ width: `${fillPercent}%` }}
+            <motion.div
+              className={`${barColor} rounded-full`}
+              initial={{ width: 0 }}
+              animate={{ width: `${fillPercent}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
               data-testid="buffer-fill"
             />
           </div>
@@ -99,6 +108,6 @@ export function ChannelBufferGauge({
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   )
 }
