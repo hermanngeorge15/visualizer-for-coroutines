@@ -14,6 +14,7 @@ import { ThreadTimeline } from './ThreadTimeline'
 import { DispatcherOverview } from './DispatcherOverview'
 import { ChannelPanel } from './channels/ChannelPanel'
 import { FlowPanel } from './flow/FlowPanel'
+import { SyncPanel } from './sync/SyncPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -358,16 +359,7 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
         {/* Sync tab - shown when sync primitive events are present */}
         {eventCategories.hasSyncPrimitives && (
           <Tab key="sync" title="Sync">
-            <Card className="mt-2">
-              <CardBody>
-                <div className="text-center text-default-400 py-8">
-                  <p className="text-lg font-semibold mb-2">Synchronization Primitives</p>
-                  <p className="text-sm">
-                    Mutex contention, semaphore permits, and deadlock detection will be displayed here.
-                  </p>
-                </div>
-              </CardBody>
-            </Card>
+            <SyncPanel sessionId={sessionId} />
           </Tab>
         )}
 
