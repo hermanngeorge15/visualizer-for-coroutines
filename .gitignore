@@ -20,8 +20,9 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 
-# Claude
-.claude/
+# Claude (keep skills, ignore the rest)
+.claude/*
+!.claude/skills/
 
 # Git backups
 .git-backup/
