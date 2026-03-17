@@ -1,0 +1,23 @@
+services:
+  backend:
+    image: ghcr.io/hermanngeorge15/visualizer-for-coroutines/backend:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://your-frontend-domain.com}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/hermanngeorge15/visualizer-for-coroutines/frontend:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
