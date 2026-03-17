@@ -25,9 +25,18 @@ fun Application.configureHTTP() {
         // Allow requests from frontend dev server
         allowHost("localhost:3000")
         allowHost("127.0.0.1:3000")
-        
-        // Allow production origins (add your production domains here)
-        // allowHost("yourdomain.com", schemes = listOf("https"))
+
+        // Allow production origins from environment variable
+        val corsOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
+        corsOrigins?.split(",")?.map { it.trim() }?.forEach { origin ->
+            val parts = origin.removePrefix("https://").removePrefix("http://")
+            if (origin.startsWith("https://")) {
+                allowHost(parts, schemes = listOf("https"))
+            } else {
+                allowHost(parts)
+            }
+            logger.info("CORS: added production origin $origin")
+        }
         
         // Allow all HTTP methods
         allowMethod(HttpMethod.Options)
