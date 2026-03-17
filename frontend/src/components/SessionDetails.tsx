@@ -306,8 +306,8 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
 
       {/* Main Tabs */}
       <Tabs aria-label="Session tabs" variant="bordered" fullWidth>
-        {/* Overview tab - contains existing content */}
-        <Tab key="overview" title="Overview">
+        {/* Coroutines tab - Graph/List view toggle */}
+        <Tab key="coroutines" title="Coroutines">
           <div className="space-y-4 pt-2">
             <Card>
               <CardBody className="overflow-auto">
@@ -318,13 +318,23 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
                 )}
               </CardBody>
             </Card>
+          </div>
+        </Tab>
 
+        {/* Events tab - restored as its own focused tab */}
+        <Tab key="events" title="Events">
+          <div className="pt-2">
             <Card>
               <CardBody>
                 <EventsList events={allEvents} />
               </CardBody>
             </Card>
+          </div>
+        </Tab>
 
+        {/* Threads tab - thread activity and dispatcher overview */}
+        <Tab key="threads" title="Threads">
+          <div className="space-y-4 pt-2">
             {threadActivity ? (
               <ThreadTimeline threadActivity={threadActivity} />
             ) : (

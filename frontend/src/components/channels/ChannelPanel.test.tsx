@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { ChannelPanel } from './ChannelPanel'
@@ -148,8 +148,10 @@ describe('ChannelPanel', () => {
     const betaSelector = screen.getByTestId('channel-selector-ch-2')
     fireEvent.click(betaSelector)
 
-    // After clicking, the buffer state header should show Beta
-    expect(screen.getByText(/Buffer State:.*Beta/)).toBeInTheDocument()
+    // After clicking, the buffer state header should show Beta (wait for animation)
+    await waitFor(() => {
+      expect(screen.getByText(/Buffer State:.*Beta/)).toBeInTheDocument()
+    })
   })
 })
 

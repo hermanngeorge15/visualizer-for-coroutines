@@ -1,4 +1,5 @@
 import { Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 import { JobStateBadge } from './JobStateBadge'
 import type { JobState } from '@/hooks/use-job-events'
 
@@ -7,13 +8,19 @@ interface JobHierarchyViewProps {
   roots: JobState[]
 }
 
-function JobNode({ job, jobs, depth }: { job: JobState; jobs: JobState[]; depth: number }) {
+function JobNode({ job, jobs, depth, index }: { job: JobState; jobs: JobState[]; depth: number; index: number }) {
   // Find children whose parentCoroutineId matches this job's coroutineId
   const children = jobs.filter((j) => j.parentCoroutineId === job.coroutineId)
   const isBlocked = job.waitingForChildren.length > 0
 
   return (
-    <div className="space-y-1" data-testid="job-tree-node">
+    <motion.div
+      className="space-y-1"
+      data-testid="job-tree-node"
+      initial={{ opacity: 0, x: -15 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: (depth * 0.1) + (index * 0.05) }}
+    >
       <div
         className="flex items-center gap-2 rounded px-2 py-1 text-xs"
         style={{ marginLeft: `${depth * 20}px` }}
@@ -41,10 +48,10 @@ function JobNode({ job, jobs, depth }: { job: JobState; jobs: JobState[]; depth:
           </Chip>
         )}
       </div>
-      {children.map((child) => (
-        <JobNode key={child.jobId} job={child} jobs={jobs} depth={depth + 1} />
+      {children.map((child, childIndex) => (
+        <JobNode key={child.jobId} job={child} jobs={jobs} depth={depth + 1} index={childIndex} />
       ))}
-    </div>
+    </motion.div>
   )
 }
 
@@ -59,8 +66,8 @@ export function JobHierarchyView({ jobs, roots }: JobHierarchyViewProps) {
 
   return (
     <div className="space-y-1" data-testid="job-hierarchy-view">
-      {roots.map((root) => (
-        <JobNode key={root.jobId} job={root} jobs={jobs} depth={0} />
+      {roots.map((root, index) => (
+        <JobNode key={root.jobId} job={root} jobs={jobs} depth={0} index={index} />
       ))}
     </div>
   )

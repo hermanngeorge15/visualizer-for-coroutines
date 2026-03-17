@@ -1,4 +1,5 @@
 import { Chip } from '@heroui/react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FiArrowUp, FiArrowDown, FiPause, FiXCircle, FiActivity } from 'react-icons/fi'
 import { formatNanoTime } from '@/lib/utils'
 import type { ChannelEvent } from '@/types/api'
@@ -114,55 +115,65 @@ export function ChannelTimeline({ events }: ChannelTimelineProps) {
 
   return (
     <div className="space-y-1" data-testid="channel-timeline">
-      {events.map((event, index) => {
-        const side = getEventSide(event.kind)
-        const isLast = index === events.length - 1
+      <AnimatePresence mode="popLayout">
+        {events.map((event, index) => {
+          const side = getEventSide(event.kind)
+          const isLast = index === events.length - 1
 
-        return (
-          <div key={event.seq} className="flex items-stretch gap-0" data-testid="timeline-event">
-            {/* Left (send) column */}
-            <div className="flex-1 flex justify-end pr-2">
-              {side === 'send' && (
-                <TimelineCard event={event} />
-              )}
-            </div>
-
-            {/* Center spine */}
-            <div className="flex flex-col items-center w-8">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-white bg-${getEventColor(event.kind)}`}
-                style={{
-                  backgroundColor:
-                    getEventColor(event.kind) === 'success'
-                      ? 'rgb(23, 201, 100)'
-                      : getEventColor(event.kind) === 'warning'
-                        ? 'rgb(245, 165, 36)'
-                        : getEventColor(event.kind) === 'danger'
-                          ? 'rgb(243, 18, 96)'
-                          : getEventColor(event.kind) === 'primary'
-                            ? 'rgb(0, 111, 238)'
-                            : getEventColor(event.kind) === 'secondary'
-                              ? 'rgb(126, 34, 206)'
-                              : 'rgb(113, 113, 122)',
-                }}
-              >
-                {getEventIcon(event.kind)}
+          return (
+            <motion.div
+              key={event.seq}
+              className="flex items-stretch gap-0"
+              data-testid="timeline-event"
+              initial={{ opacity: 0, x: side === 'send' ? -20 : 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: side === 'send' ? -20 : 20 }}
+              transition={{ duration: 0.2, delay: index * 0.03 }}
+            >
+              {/* Left (send) column */}
+              <div className="flex-1 flex justify-end pr-2">
+                {side === 'send' && (
+                  <TimelineCard event={event} />
+                )}
               </div>
-              {!isLast && <div className="w-0.5 flex-1 bg-default-200 min-h-[12px]" />}
-            </div>
 
-            {/* Right (receive) column */}
-            <div className="flex-1 pl-2">
-              {side === 'receive' && (
-                <TimelineCard event={event} />
-              )}
-              {side === 'meta' && (
-                <TimelineCard event={event} />
-              )}
-            </div>
-          </div>
-        )
-      })}
+              {/* Center spine */}
+              <div className="flex flex-col items-center w-8">
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-white bg-${getEventColor(event.kind)}`}
+                  style={{
+                    backgroundColor:
+                      getEventColor(event.kind) === 'success'
+                        ? 'rgb(23, 201, 100)'
+                        : getEventColor(event.kind) === 'warning'
+                          ? 'rgb(245, 165, 36)'
+                          : getEventColor(event.kind) === 'danger'
+                            ? 'rgb(243, 18, 96)'
+                            : getEventColor(event.kind) === 'primary'
+                              ? 'rgb(0, 111, 238)'
+                              : getEventColor(event.kind) === 'secondary'
+                                ? 'rgb(126, 34, 206)'
+                                : 'rgb(113, 113, 122)',
+                  }}
+                >
+                  {getEventIcon(event.kind)}
+                </div>
+                {!isLast && <div className="w-0.5 flex-1 bg-default-200 min-h-[12px]" />}
+              </div>
+
+              {/* Right (receive) column */}
+              <div className="flex-1 pl-2">
+                {side === 'receive' && (
+                  <TimelineCard event={event} />
+                )}
+                {side === 'meta' && (
+                  <TimelineCard event={event} />
+                )}
+              </div>
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
     </div>
   )
 }

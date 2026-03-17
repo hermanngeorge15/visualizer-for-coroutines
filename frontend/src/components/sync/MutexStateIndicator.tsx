@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 import type { MutexState } from '@/hooks/use-sync-events'
 
 interface MutexStateIndicatorProps {
@@ -7,45 +8,73 @@ interface MutexStateIndicatorProps {
 
 export function MutexStateIndicator({ mutex }: MutexStateIndicatorProps) {
   return (
-    <Card shadow="sm" data-testid="mutex-state">
-      <CardHeader className="pb-2">
-        <div className="flex w-full items-center justify-between">
-          <div>
-            <div className="font-semibold text-sm">
-              {mutex.label || mutex.mutexId}
+    <motion.div
+      animate={
+        mutex.isLocked
+          ? {
+              boxShadow: [
+                '0 0 0 0 rgba(243, 18, 96, 0)',
+                '0 0 0 4px rgba(243, 18, 96, 0.15)',
+                '0 0 0 0 rgba(243, 18, 96, 0)',
+              ],
+            }
+          : {
+              boxShadow: [
+                '0 0 0 0 rgba(23, 201, 100, 0)',
+                '0 0 0 4px rgba(23, 201, 100, 0.15)',
+                '0 0 0 0 rgba(23, 201, 100, 0)',
+              ],
+            }
+      }
+      transition={{ duration: 2, repeat: Infinity }}
+      className="rounded-xl"
+    >
+      <Card shadow="sm" data-testid="mutex-state">
+        <CardHeader className="pb-2">
+          <div className="flex w-full items-center justify-between">
+            <div>
+              <div className="font-semibold text-sm">
+                {mutex.label || mutex.mutexId}
+              </div>
+              <div className="text-xs text-default-500 font-mono">{mutex.mutexId}</div>
             </div>
-            <div className="text-xs text-default-500 font-mono">{mutex.mutexId}</div>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            >
+              <Chip
+                size="sm"
+                variant="flat"
+                color={mutex.isLocked ? 'danger' : 'success'}
+                data-testid="lock-status"
+              >
+                {mutex.isLocked ? 'Locked' : 'Unlocked'}
+              </Chip>
+            </motion.div>
           </div>
-          <Chip
-            size="sm"
-            variant="flat"
-            color={mutex.isLocked ? 'danger' : 'success'}
-            data-testid="lock-status"
-          >
-            {mutex.isLocked ? 'Locked' : 'Unlocked'}
-          </Chip>
-        </div>
-      </CardHeader>
-      <CardBody className="pt-0">
-        <div className="grid grid-cols-3 gap-3 text-xs">
-          <div>
-            <div className="text-default-500">Holder</div>
-            <div className="font-mono font-semibold">
-              {mutex.currentHolder
-                ? mutex.currentHolderLabel || mutex.currentHolder
-                : 'None'}
+        </CardHeader>
+        <CardBody className="pt-0">
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <div className="text-default-500">Holder</div>
+              <div className="font-mono font-semibold">
+                {mutex.currentHolder
+                  ? mutex.currentHolderLabel || mutex.currentHolder
+                  : 'None'}
+              </div>
+            </div>
+            <div>
+              <div className="text-default-500">Contention</div>
+              <div className="font-semibold">{mutex.contentionCount}</div>
+            </div>
+            <div>
+              <div className="text-default-500">Acquisitions</div>
+              <div className="font-semibold">{mutex.lockAcquisitions}</div>
             </div>
           </div>
-          <div>
-            <div className="text-default-500">Contention</div>
-            <div className="font-semibold">{mutex.contentionCount}</div>
-          </div>
-          <div>
-            <div className="text-default-500">Acquisitions</div>
-            <div className="font-semibold">{mutex.lockAcquisitions}</div>
-          </div>
-        </div>
-      </CardBody>
-    </Card>
+        </CardBody>
+      </Card>
+    </motion.div>
   )
 }

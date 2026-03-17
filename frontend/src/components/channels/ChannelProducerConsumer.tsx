@@ -1,5 +1,5 @@
 import { Chip } from '@heroui/react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FiArrowRight, FiBox } from 'react-icons/fi'
 import type { ChannelState } from '@/hooks/use-channel-events'
 
@@ -16,9 +16,15 @@ export function ChannelProducerConsumer({ channel }: ChannelProducerConsumerProp
 
   if (!hasProducers && !hasConsumers) {
     return (
-      <div className="text-center text-default-400 py-4" data-testid="producer-consumer-empty">
+      <motion.div
+        className="text-center text-default-400 py-4"
+        data-testid="producer-consumer-empty"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
         No producer/consumer activity recorded yet.
-      </div>
+      </motion.div>
     )
   }
 
@@ -28,21 +34,33 @@ export function ChannelProducerConsumer({ channel }: ChannelProducerConsumerProp
       : 0
 
   return (
-    <div className="flex items-center gap-4 py-4" data-testid="producer-consumer-diagram">
+    <motion.div
+      className="flex items-center gap-4 py-4"
+      data-testid="producer-consumer-diagram"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, delay: 0.1 }}
+    >
       {/* Producers (left) */}
       <div className="flex-1 space-y-2" data-testid="producers-column">
         <div className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-2">
           Producers ({producers.length})
         </div>
-        {producers.map((id) => (
-          <div
-            key={id}
-            className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20"
-          >
-            <div className="w-2 h-2 rounded-full bg-primary" />
-            <span className="text-xs font-mono truncate">{id}</span>
-          </div>
-        ))}
+        <AnimatePresence mode="popLayout">
+          {producers.map((id, index) => (
+            <motion.div
+              key={id}
+              className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2, delay: index * 0.03 }}
+            >
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-xs font-mono truncate">{id}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Animated arrows + channel buffer (middle) */}
@@ -65,9 +83,11 @@ export function ChannelProducerConsumer({ channel }: ChannelProducerConsumerProp
         >
           {/* Fill level */}
           {channel.capacity > 0 && (
-            <div
-              className="absolute bottom-0 left-0 right-0 bg-primary/20 transition-all duration-500"
-              style={{ height: `${fillPercent}%` }}
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 bg-primary/20"
+              initial={{ height: 0 }}
+              animate={{ height: `${fillPercent}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
             />
           )}
           <div className="relative z-10 flex flex-col items-center">
@@ -108,16 +128,22 @@ export function ChannelProducerConsumer({ channel }: ChannelProducerConsumerProp
         <div className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-2">
           Consumers ({consumers.length})
         </div>
-        {consumers.map((id) => (
-          <div
-            key={id}
-            className="flex items-center gap-2 p-2 rounded-lg bg-secondary/5 border border-secondary/20"
-          >
-            <div className="w-2 h-2 rounded-full bg-secondary" />
-            <span className="text-xs font-mono truncate">{id}</span>
-          </div>
-        ))}
+        <AnimatePresence mode="popLayout">
+          {consumers.map((id, index) => (
+            <motion.div
+              key={id}
+              className="flex items-center gap-2 p-2 rounded-lg bg-secondary/5 border border-secondary/20"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2, delay: index * 0.03 }}
+            >
+              <div className="w-2 h-2 rounded-full bg-secondary" />
+              <span className="text-xs font-mono truncate">{id}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   )
 }
