@@ -24,15 +24,17 @@ fun Application.configureHTTP() {
 
     // CORS Configuration — origins and methods come from application.yaml / env vars
     install(CORS) {
-        val origins =
+        val originsRaw =
             config.propertyOrNull("cors.allowedOrigins")?.getString()
                 ?: "http://localhost:3000,http://127.0.0.1:3000"
+        val origins = originsRaw.trim('"')
         origins.split(",").map { it.trim() }.filter { it.isNotEmpty() }.forEach { origin ->
-            val host = origin.removePrefix("https://").removePrefix("http://")
-            if (origin.startsWith("https://")) {
+            val cleaned = origin.trim('"')
+            val host = cleaned.removePrefix("https://").removePrefix("http://")
+            if (cleaned.startsWith("https://")) {
                 allowHost(host, schemes = listOf("https"))
             } else {
-                allowHost(host)
+                allowHost(host, schemes = listOf("http"))
             }
         }
         logger.info("CORS origins: $origins")
