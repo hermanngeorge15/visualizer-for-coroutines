@@ -14,7 +14,7 @@ dependencies {
     // Core dependencies only — no Ktor, no web framework
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
-    implementation("org.slf4j:slf4j-api:2.0.9")
+    implementation("org.slf4j:slf4j-api:2.0.17")
 
     // Test
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
