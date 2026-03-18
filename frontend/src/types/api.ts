@@ -308,6 +308,17 @@ export type VizEventKind =
   // Deadlock event kinds
   | 'DeadlockDetected'
   | 'PotentialDeadlockWarning'
+  // Actor event kinds
+  | 'ActorCreated'
+  | 'ActorMessageProcessed'
+  | 'ActorStateChanged'
+  | 'ActorMailboxChanged'
+  | 'ActorClosed'
+  // Select event kinds
+  | 'SelectStarted'
+  | 'SelectClauseRegistered'
+  | 'SelectClauseWon'
+  | 'SelectCompleted'
 
 export interface BaseVizEvent {
   sessionId: string
@@ -701,4 +712,105 @@ export const JOB_EVENT_KINDS: ReadonlySet<string> = new Set([
   'JobJoinCompleted',
   'JobCancellationRequested',
   'WaitingForChildren',
+])
+
+// ============================================================================
+// Actor Events
+// ============================================================================
+
+export interface ActorCreated extends BaseVizEvent {
+  kind: 'ActorCreated'
+  actorId: string
+  coroutineId: string
+  label?: string
+  name?: string | null
+  mailboxCapacity: number
+}
+
+export interface ActorStateChanged extends BaseVizEvent {
+  kind: 'ActorStateChanged'
+  actorId: string
+  state: string
+  newStatePreview: string
+}
+
+export interface ActorMailboxChanged extends BaseVizEvent {
+  kind: 'ActorMailboxChanged'
+  actorId: string
+  mailboxSize: number
+  capacity: number
+  currentSize: number
+  pendingSenders: number
+}
+
+export interface ActorClosed extends BaseVizEvent {
+  kind: 'ActorClosed'
+  actorId: string
+  processedCount: number
+  reason?: string | null
+  totalMessagesProcessed?: number
+}
+
+export interface ActorMessageProcessed extends BaseVizEvent {
+  kind: 'ActorMessageProcessed'
+  actorId: string
+}
+
+export type ActorEvent = ActorCreated | ActorMessageProcessed | ActorStateChanged | ActorMailboxChanged | ActorClosed
+
+export const ACTOR_EVENT_KINDS: ReadonlySet<string> = new Set([
+  'ActorCreated',
+  'ActorMessageProcessed',
+  'ActorStateChanged',
+  'ActorMailboxChanged',
+  'ActorClosed',
+])
+
+// ============================================================================
+// Select Events
+// ============================================================================
+
+export interface SelectStarted extends BaseVizEvent {
+  kind: 'SelectStarted'
+  selectId: string
+  coroutineId: string
+}
+
+export interface SelectClauseRegistered extends BaseVizEvent {
+  kind: 'SelectClauseRegistered'
+  selectId: string
+  coroutineId?: string
+  clauseIndex: number
+  clauseType: string
+  description?: string
+  channelId?: string | null
+  deferredId?: string | null
+  timeoutMillis?: number | null
+  label?: string | null
+}
+
+export interface SelectClauseWon extends BaseVizEvent {
+  kind: 'SelectClauseWon'
+  selectId: string
+  coroutineId?: string
+  winningClauseIndex: number
+  winnerClauseIndex: number
+  winnerClauseType: string
+  waitDurationNanos: number
+}
+
+export interface SelectCompleted extends BaseVizEvent {
+  kind: 'SelectCompleted'
+  selectId: string
+  coroutineId?: string
+  totalDurationNanos: number
+}
+
+export type SelectEvent = SelectStarted | SelectClauseRegistered | SelectClauseWon | SelectCompleted
+
+export const SELECT_EVENT_KINDS: ReadonlySet<string> = new Set([
+  'SelectStarted',
+  'SelectClauseRegistered',
+  'SelectClauseWon',
+  'SelectCompleted',
 ])
