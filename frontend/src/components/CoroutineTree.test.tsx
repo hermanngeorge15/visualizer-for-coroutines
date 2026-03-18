@@ -13,6 +13,10 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 
+vi.mock('@/lib/animation-throttle', () => ({
+  useAnimationSlot: () => false,
+}))
+
 function makeCoroutine(overrides: Partial<CoroutineNode> = {}): CoroutineNode {
   return {
     id: 'c-1',
