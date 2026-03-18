@@ -20,31 +20,28 @@ import org.slf4j.LoggerFactory
 private val logger = LoggerFactory.getLogger("HTTP")
 
 fun Application.configureHTTP() {
-    // CORS Configuration for frontend access
+    val config = environment.config
+
+    // CORS Configuration — origins and methods come from application.yaml / env vars
     install(CORS) {
-        // Allow requests from frontend dev server
-        allowHost("localhost:3000")
-        allowHost("127.0.0.1:3000")
-
-        // Allow production origins from environment variable
-        val corsOrigins = System.getenv("CORS_ALLOWED_ORIGINS")
-        corsOrigins?.split(",")?.map { it.trim() }?.forEach { origin ->
-            val parts = origin.removePrefix("https://").removePrefix("http://")
+        val origins = config.propertyOrNull("cors.allowedOrigins")?.getString()
+            ?: "http://localhost:3000,http://127.0.0.1:3000"
+        origins.split(",").map { it.trim() }.filter { it.isNotEmpty() }.forEach { origin ->
+            val host = origin.removePrefix("https://").removePrefix("http://")
             if (origin.startsWith("https://")) {
-                allowHost(parts, schemes = listOf("https"))
+                allowHost(host, schemes = listOf("https"))
             } else {
-                allowHost(parts)
+                allowHost(host)
             }
-            logger.info("CORS: added production origin $origin")
         }
+        logger.info("CORS origins: $origins")
 
-        // Allow all HTTP methods
-        allowMethod(HttpMethod.Options)
-        allowMethod(HttpMethod.Get)
-        allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Delete)
-        allowMethod(HttpMethod.Patch)
+        val methods = config.propertyOrNull("cors.allowedMethods")?.getString()
+            ?: "GET,POST,DELETE,OPTIONS"
+        methods.split(",").map { it.trim().uppercase() }.filter { it.isNotEmpty() }.forEach { method ->
+            allowMethod(HttpMethod.parse(method))
+        }
+        logger.info("CORS methods: $methods")
 
         // Allow common headers
         allowHeader(HttpHeaders.ContentType)
@@ -60,8 +57,6 @@ fun Application.configureHTTP() {
 
         // Set max age for preflight requests cache
         maxAgeInSeconds = 3600
-
-        logger.info("CORS configured: allowing localhost:3000 and 127.0.0.1:3000")
     }
 
     install(AsyncApiPlugin) {
