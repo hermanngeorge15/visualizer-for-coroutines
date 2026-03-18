@@ -1,23 +1,2270 @@
 openapi: "3.0.3"
 info:
-  title: "Application API"
-  description: "Application API"
+  title: "Coroutine Visualizer API"
+  description: >
+    REST and SSE API for the Kotlin Coroutine Visualizer. Provides endpoints
+    to manage visualization sessions, run built-in and custom coroutine
+    scenarios, stream events in real time via SSE, query coroutine hierarchy
+    and thread activity, and validate event streams against structured
+    concurrency rules.
   version: "1.0.0"
+  contact:
+    name: "Coroutine Visualizer"
 servers:
   - url: "http://0.0.0.0:8080"
+    description: "Local development server"
+
+tags:
+  - name: Root
+    description: Root and SSE smoke-test endpoints
+  - name: Health
+    description: Application health and readiness checks
+  - name: Sessions
+    description: Create, list, inspect, and delete visualization sessions
+  - name: Events
+    description: Retrieve recorded events and stream live events via SSE
+  - name: Projections
+    description: Hierarchy trees, thread activity, and coroutine timelines
+  - name: Validation
+    description: Validate event streams against structured concurrency rules
+  - name: Scenarios - Basic
+    description: Built-in basic coroutine scenarios (nested, parallel, cancellation, etc.)
+  - name: Scenarios - Channel
+    description: Channel communication pattern scenarios (rendezvous, buffered, fan-out)
+  - name: Scenarios - Realistic
+    description: Real-world service simulation scenarios (order processing, registration, reports)
+  - name: Scenarios - Flow
+    description: Kotlin Flow scenarios (simple, operators, StateFlow, SharedFlow)
+  - name: Scenarios - Patterns
+    description: Concurrency pattern scenarios (retry, producer-consumer, fan-out/fan-in, supervisor, circuit breaker)
+  - name: Scenarios - Sync
+    description: Synchronization primitive scenarios (Mutex, Semaphore, combined)
+  - name: Scenarios - Custom
+    description: User-defined custom scenario execution
+  - name: Scenarios - Catalog
+    description: List available scenarios in each category
+  - name: Comparison
+    description: Compare two visualization sessions side by side
+  - name: Viz
+    description: Quick visualization helpers and example scenarios
+  - name: Tests
+    description: Legacy test runner (deprecated, redirects to /api/scenarios)
+
 paths:
+  # ==========================================================================
+  # ROOT
+  # ==========================================================================
   /:
     get:
-      description: "Hello World!"
+      tags: [Root]
+      summary: Root health probe
+      description: >
+        Returns a plain-text greeting. Useful as a quick connectivity check.
+      operationId: getRoot
       responses:
         "200":
-          description: "OK"
+          description: Plain-text greeting
           content:
             text/plain:
               schema:
-                type: "string"
+                type: string
               examples:
-                Example#1:
+                greeting:
                   value: "Hello World!"
+
+  /hello:
+    get:
+      tags: [Root]
+      summary: SSE smoke test
+      description: >
+        Opens a Server-Sent Events stream that emits a single event with
+        data "world". Useful for verifying that SSE transport works.
+      operationId: getSseHello
+      responses:
+        "200":
+          description: SSE stream with one event
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE stream; single event with data "world"
+
+  # ==========================================================================
+  # HEALTH
+  # ==========================================================================
+  /health:
+    get:
+      tags: [Health]
+      summary: Application health status
+      description: >
+        Returns the current health of the application including active session
+        count, uptime, and JVM memory usage. Returns HTTP 200 when healthy and
+        HTTP 503 when memory usage exceeds 90%.
+      operationId: getHealth
+      responses:
+        "200":
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Application is degraded (memory usage above 90%)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ==========================================================================
+  # SESSIONS
+  # ==========================================================================
+  /api/sessions:
+    post:
+      tags: [Sessions]
+      summary: Create a new visualization session
+      description: >
+        Creates a new empty visualization session. An optional name can be
+        provided via query parameter; otherwise a default name is assigned.
+      operationId: createSession
+      parameters:
+        - name: name
+          in: query
+          required: false
+          description: Human-readable name for the session
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessionId, message]
+                properties:
+                  sessionId:
+                    type: string
+                    description: Unique identifier for the created session
+                  message:
+                    type: string
+                    description: Confirmation message
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags: [Sessions]
+      summary: List all active sessions
+      description: >
+        Returns a summary of every active visualization session including
+        session ID, coroutine count, and event count.
+      operationId: listSessions
+      responses:
+        "200":
+          description: Array of session summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionInfo"
+
+  /api/sessions/{id}:
+    get:
+      tags: [Sessions]
+      summary: Get session snapshot
+      description: >
+        Returns the current state snapshot of a visualization session including
+        all tracked coroutines and their current states.
+      operationId: getSession
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: Session snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionSnapshotResponse"
+        "400":
+          description: Missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags: [Sessions]
+      summary: Close and delete a session
+      description: >
+        Closes the specified session and releases all associated resources.
+        Active SSE streams for this session will be terminated.
+      operationId: deleteSession
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: Session closed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Session closed"
+        "400":
+          description: Missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # EVENTS
+  # ==========================================================================
+  /api/sessions/{id}/events:
+    get:
+      tags: [Events]
+      summary: Get all recorded events
+      description: >
+        Returns every event recorded in the session's event store, ordered by
+        sequence number. Each event is a polymorphic VizEvent.
+      operationId: getSessionEvents
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: Array of VizEvent objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VizEvent"
+        "400":
+          description: Missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/sessions/{id}/stream:
+    get:
+      tags: [Events]
+      summary: Stream events via SSE
+      description: >
+        Opens a Server-Sent Events connection for the given session. On
+        connect the server first replays all stored events (history), then
+        switches to streaming live events as they are produced. Each SSE
+        message has an `event` field set to the event kind (e.g.
+        "CoroutineCreated"), an `id` field of the form
+        `{sessionId}-{seq}`, and a JSON-encoded VizEvent as data.
+      operationId: streamSessionEvents
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: >
+                  Server-Sent Events stream. Each event carries a JSON-encoded
+                  VizEvent in its data field.
+        "404":
+          description: Session not found (sent as SSE error event)
+
+  # ==========================================================================
+  # PROJECTIONS
+  # ==========================================================================
+  /api/sessions/{id}/hierarchy:
+    get:
+      tags: [Projections]
+      summary: Get coroutine hierarchy tree
+      description: >
+        Returns the parent-child hierarchy of all coroutines in the session.
+        Optionally filter to a specific scope by providing the scopeId
+        query parameter.
+      operationId: getSessionHierarchy
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+        - name: scopeId
+          in: query
+          required: false
+          description: Filter hierarchy to coroutines within this scope ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of hierarchy nodes forming the coroutine tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HierarchyNode"
+        "400":
+          description: Missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/sessions/{id}/threads:
+    get:
+      tags: [Projections]
+      summary: Get thread activity
+      description: >
+        Returns a list of thread assignment and release events, showing which
+        coroutines ran on which threads and when. Useful for rendering thread
+        lane visualizations.
+      operationId: getSessionThreads
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: Array of thread activity events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThreadEvent"
+        "400":
+          description: Missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/sessions/{id}/coroutines/{coroutineId}/timeline:
+    get:
+      tags: [Projections]
+      summary: Get coroutine timeline
+      description: >
+        Returns a detailed timeline for a single coroutine, including total
+        duration, active/suspended time breakdown, parent-child relationships,
+        and an ordered list of timeline event summaries.
+      operationId: getCoroutineTimeline
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+        - name: coroutineId
+          in: path
+          required: true
+          description: Unique coroutine identifier
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Coroutine timeline data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoroutineTimeline"
+        "400":
+          description: Missing session ID or coroutine ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session or coroutine not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # VALIDATION
+  # ==========================================================================
+  /api/validate/session/{id}:
+    post:
+      tags: [Validation]
+      summary: Validate session events
+      description: >
+        Runs all structured concurrency validators against the event stream
+        of the specified session. Checks include lifecycle validation,
+        hierarchy correctness, structured concurrency rules, sequence
+        uniqueness, and timing analysis.
+      operationId: validateSession
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: Validation results and timing report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResponse"
+        "400":
+          description: Missing session ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/validate/rules:
+    get:
+      tags: [Validation]
+      summary: List available validation rules
+      description: >
+        Returns the list of all validation rules that are executed during
+        session validation, including each rule's name and description.
+      operationId: getValidationRules
+      responses:
+        "200":
+          description: Array of validation rule descriptors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationRule"
+
+  # ==========================================================================
+  # SCENARIOS - CATALOG
+  # ==========================================================================
+  /api/scenarios:
+    get:
+      tags: [Scenarios - Catalog]
+      summary: List all general scenarios
+      description: >
+        Returns the catalog of built-in scenarios across all categories
+        (realistic, channel, basic). Each entry includes the scenario ID,
+        display name, description, HTTP endpoint, category, and estimated
+        duration.
+      operationId: listScenarios
+      responses:
+        "200":
+          description: Scenario catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScenarioCatalogEntry"
+
+  /api/scenarios/flow:
+    get:
+      tags: [Scenarios - Catalog]
+      summary: List Flow scenarios
+      description: >
+        Returns the catalog of Flow-specific scenarios (simple, operators,
+        StateFlow, SharedFlow).
+      operationId: listFlowScenarios
+      responses:
+        "200":
+          description: Flow scenario catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScenarioCatalogEntry"
+
+  /api/scenarios/patterns:
+    get:
+      tags: [Scenarios - Catalog]
+      summary: List concurrency pattern scenarios
+      description: >
+        Returns the catalog of concurrency pattern scenarios (retry,
+        producer-consumer, fan-out/fan-in, supervisor, circuit breaker).
+      operationId: listPatternScenarios
+      responses:
+        "200":
+          description: Pattern scenario catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PatternInfo"
+
+  /api/sync/scenarios:
+    get:
+      tags: [Scenarios - Catalog]
+      summary: List synchronization scenarios
+      description: >
+        Returns the catalog of synchronization primitive scenarios (Mutex,
+        Semaphore, combined). Each entry includes path, name, type, and
+        description.
+      operationId: listSyncScenarios
+      responses:
+        "200":
+          description: Sync scenario catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScenarioInfo"
+
+  # ==========================================================================
+  # SCENARIOS - BASIC
+  # ==========================================================================
+  /api/scenarios/nested:
+    post:
+      tags: [Scenarios - Basic]
+      summary: Run nested coroutines scenario
+      description: >
+        Executes a scenario demonstrating parent-child relationships and
+        structured concurrency. Creates a new session or reuses an existing one.
+      operationId: runNestedScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/parallel:
+    post:
+      tags: [Scenarios - Basic]
+      summary: Run parallel execution scenario
+      description: >
+        Executes a scenario with multiple coroutines running in parallel.
+      operationId: runParallelScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/cancellation:
+    post:
+      tags: [Scenarios - Basic]
+      summary: Run cancellation scenario
+      description: >
+        Executes a scenario demonstrating coroutine cancellation and cleanup
+        behavior.
+      operationId: runCancellationScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/deep-nesting:
+    post:
+      tags: [Scenarios - Basic]
+      summary: Run deep nesting scenario
+      description: >
+        Executes a scenario creating a deeply nested hierarchy of coroutines.
+        The depth is configurable via query parameter (default 5).
+      operationId: runDeepNestingScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+        - name: depth
+          in: query
+          required: false
+          description: Nesting depth (default 5)
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/mixed:
+    post:
+      tags: [Scenarios - Basic]
+      summary: Run mixed sequential/parallel scenario
+      description: >
+        Executes a scenario combining sequential and parallel coroutine
+        execution patterns.
+      operationId: runMixedScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/exception:
+    post:
+      tags: [Scenarios - Basic]
+      summary: Run exception handling scenario
+      description: >
+        Executes a scenario demonstrating exception tracking and failure state
+        transitions in coroutines.
+      operationId: runExceptionScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # SCENARIOS - CHANNEL
+  # ==========================================================================
+  /api/scenarios/channel-rendezvous:
+    post:
+      tags: [Scenarios - Channel]
+      summary: Run channel rendezvous scenario
+      description: >
+        Zero-buffer channel where sender and receiver must meet for each
+        transfer. Demonstrates suspension on both sides when one party is
+        not ready.
+      operationId: runChannelRendezvousScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/channel-buffered:
+    post:
+      tags: [Scenarios - Channel]
+      summary: Run channel buffered scenario
+      description: >
+        Buffered channel (capacity 3) showing buffer fill and drain behavior.
+        Producer sends 5 items; consumer starts after a delay.
+      operationId: runChannelBufferedScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/channel-fan-out:
+    post:
+      tags: [Scenarios - Channel]
+      summary: Run channel fan-out scenario
+      description: >
+        Fan-out pattern: one producer dispatches 10 tasks and 3 workers
+        compete to receive and process them.
+      operationId: runChannelFanOutScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # SCENARIOS - REALISTIC
+  # ==========================================================================
+  /api/scenarios/order-processing:
+    post:
+      tags: [Scenarios - Realistic]
+      summary: Run order processing scenario
+      description: >
+        Simulates an e-commerce order flow: validation, inventory check,
+        payment processing, database persistence, and parallel notifications.
+        Use the fail parameter to simulate a payment failure.
+      operationId: runOrderProcessingScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+        - name: fail
+          in: query
+          required: false
+          description: When true, simulates a payment failure mid-flow
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/user-registration:
+    post:
+      tags: [Scenarios - Realistic]
+      summary: Run user registration scenario
+      description: >
+        Simulates a full user registration flow: input validation, database
+        uniqueness check, user creation, parallel setup tasks (profile,
+        settings, avatar), and notification delivery. Use the failEmail
+        parameter to simulate email delivery retry.
+      operationId: runUserRegistrationScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+        - name: failEmail
+          in: query
+          required: false
+          description: When true, simulates an email delivery failure triggering retry
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/report-generation:
+    post:
+      tags: [Scenarios - Realistic]
+      summary: Run report generation scenario
+      description: >
+        Simulates a data pipeline: parallel API fetches, data aggregation,
+        PDF generation, and parallel delivery (S3 upload, email, Slack
+        notification). Use the timeout parameter to simulate an API timeout.
+      operationId: runReportGenerationScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+        - name: timeout
+          in: query
+          required: false
+          description: When true, simulates an API timeout during data fetching
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # SCENARIOS - FLOW
+  # ==========================================================================
+  /api/scenarios/flow/simple:
+    post:
+      tags: [Scenarios - Flow]
+      summary: Run simple Flow scenario
+      description: >
+        Emits and collects 5 values from a cold Flow, demonstrating basic
+        Flow creation and collection.
+      operationId: runFlowSimpleScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/flow/operators:
+    post:
+      tags: [Scenarios - Flow]
+      summary: Run Flow operators scenario
+      description: >
+        Demonstrates chaining map and filter operators on a Flow, showing
+        how values are transformed and filtered through the operator pipeline.
+      operationId: runFlowOperatorsScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/flow/stateflow:
+    post:
+      tags: [Scenarios - Flow]
+      summary: Run StateFlow scenario
+      description: >
+        Demonstrates mutable state management with StateFlow and multiple
+        observers reacting to state changes.
+      operationId: runFlowStateFlowScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/flow/sharedflow:
+    post:
+      tags: [Scenarios - Flow]
+      summary: Run SharedFlow scenario
+      description: >
+        Demonstrates broadcasting events to multiple subscribers using
+        SharedFlow with replay and buffer configuration.
+      operationId: runFlowSharedFlowScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # SCENARIOS - PATTERNS
+  # ==========================================================================
+  /api/scenarios/patterns/retry:
+    post:
+      tags: [Scenarios - Patterns]
+      summary: Run retry with exponential backoff scenario
+      description: >
+        Retries a failing operation 3 times with exponential backoff
+        (100ms, 200ms, 400ms). Shows the structured retry pattern for
+        handling transient failures.
+      operationId: runRetryScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/patterns/producer-consumer:
+    post:
+      tags: [Scenarios - Patterns]
+      summary: Run producer-consumer scenario
+      description: >
+        Producer sends items to a buffered channel (capacity 5), consumer
+        processes them with delay. Shows channel-based communication between
+        coroutines.
+      operationId: runProducerConsumerScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/patterns/fan-out-fan-in:
+    post:
+      tags: [Scenarios - Patterns]
+      summary: Run fan-out/fan-in scenario
+      description: >
+        One producer distributes work to 3 worker coroutines that process
+        in parallel; results are collected via channel. Demonstrates the
+        work distribution pattern.
+      operationId: runFanOutFanInScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/patterns/supervisor:
+    post:
+      tags: [Scenarios - Patterns]
+      summary: Run supervisor pattern scenario
+      description: >
+        Launches child coroutines where one fails but siblings continue
+        executing. Shows error isolation with structured concurrency using
+        SupervisorJob.
+      operationId: runSupervisorScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scenarios/patterns/circuit-breaker:
+    post:
+      tags: [Scenarios - Patterns]
+      summary: Run circuit breaker scenario
+      description: >
+        After N consecutive failures, stops attempting calls for a cooldown
+        period. Demonstrates the resilience pattern for protecting
+        downstream services.
+      operationId: runCircuitBreakerScenario
+      parameters:
+        - $ref: "#/components/parameters/SessionIdQuery"
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioCompletionResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # SCENARIOS - SYNC (Mutex / Semaphore)
+  # ==========================================================================
+  /api/sync/mutex/counter:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run thread-safe counter scenario
+      description: >
+        Demonstrates using a Mutex for atomic counter increments from
+        multiple coroutines.
+      operationId: runMutexCounterScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/mutex/bank-transfer:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run bank account transfer scenario
+      description: >
+        Demonstrates safe money transfer between accounts with consistent
+        lock ordering to prevent deadlocks.
+      operationId: runMutexBankTransferScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/mutex/cache:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run cache read-through scenario
+      description: >
+        Demonstrates thread-safe lazy initialization and cache read-through
+        pattern using Mutex.
+      operationId: runMutexCacheScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/mutex/deadlock-demo:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run deadlock demonstration scenario
+      description: >
+        Intentionally creates a deadlock to demonstrate deadlock detection
+        capabilities. Two coroutines attempt to acquire two mutexes in
+        opposite order.
+      operationId: runMutexDeadlockScenario
+      responses:
+        "200":
+          description: Scenario completed (deadlock detected and resolved)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/semaphore/connection-pool:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run database connection pool scenario
+      description: >
+        Demonstrates limiting concurrent database connections using a
+        Semaphore. Multiple coroutines compete for a limited number of
+        connections.
+      operationId: runSemaphoreConnectionPoolScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/semaphore/rate-limiter:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run API rate limiter scenario
+      description: >
+        Demonstrates throttling concurrent API calls using a Semaphore to
+        enforce a maximum number of in-flight requests.
+      operationId: runSemaphoreRateLimiterScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/semaphore/file-processor:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run parallel file processor scenario
+      description: >
+        Demonstrates I/O-limited parallel file processing where a Semaphore
+        restricts the number of concurrent file operations.
+      operationId: runSemaphoreFileProcessorScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/semaphore/resource-timeout:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run resource pool with timeout scenario
+      description: >
+        Demonstrates resource acquisition with timeout handling. Coroutines
+        attempt to acquire a limited resource and fail gracefully if the
+        timeout expires.
+      operationId: runSemaphoreResourceTimeoutScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/semaphore/producer-consumer:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run producer-consumer buffer scenario
+      description: >
+        Demonstrates a bounded buffer implementation using Semaphore to
+        coordinate producer and consumer coroutines.
+      operationId: runSemaphoreProducerConsumerScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  /api/sync/combined/ecommerce:
+    get:
+      tags: [Scenarios - Sync]
+      summary: Run e-commerce order processing (Mutex + Semaphore)
+      description: >
+        Demonstrates combining Mutex and Semaphore in a realistic e-commerce
+        order processing flow with inventory management and payment
+        processing.
+      operationId: runSyncEcommerceScenario
+      responses:
+        "200":
+          description: Scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+        "500":
+          description: Scenario execution failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScenarioResponse"
+
+  # ==========================================================================
+  # SCENARIOS - CUSTOM
+  # ==========================================================================
+  /api/scenarios/custom:
+    post:
+      tags: [Scenarios - Custom]
+      summary: Run a custom scenario
+      description: >
+        Accepts a JSON-defined scenario configuration and executes it. The
+        request body defines the coroutine tree structure, actions (delay,
+        throw, log), and nesting. A new session is created unless an
+        existing sessionId is provided in the request body.
+      operationId: runCustomScenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScenarioConfigRequest"
+      responses:
+        "200":
+          description: Custom scenario completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioExecutionResponse"
+        "400":
+          description: Invalid scenario configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioExecutionResponse"
+        "500":
+          description: Scenario execution error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioExecutionResponse"
+
+  # ==========================================================================
+  # COMPARISON
+  # ==========================================================================
+  /api/compare:
+    get:
+      tags: [Comparison]
+      summary: Compare two sessions
+      description: >
+        Produces a structured diff between two visualization sessions. The
+        comparison includes aggregate differences (coroutine count, event
+        count, duration), coroutines unique to each session, and per-coroutine
+        state and event count comparisons for shared coroutines.
+      operationId: compareSessions
+      parameters:
+        - name: sessionA
+          in: query
+          required: true
+          description: ID of the first (baseline) session
+          schema:
+            type: string
+        - name: sessionB
+          in: query
+          required: true
+          description: ID of the second (comparison) session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session comparison results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionComparison"
+        "400":
+          description: Missing required query parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: One or both sessions not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # VIZ HELPERS
+  # ==========================================================================
+  /api/viz/run-scenario-with-data:
+    get:
+      tags: [Viz]
+      summary: Run a minimal scenario and return data inline
+      description: >
+        Creates a temporary session, runs a minimal 3-event coroutine
+        lifecycle (Created, Started, Completed), and returns the full event
+        list and coroutine node data in a single response. Useful for quick
+        testing without managing sessions.
+      operationId: runVizScenarioWithData
+      responses:
+        "200":
+          description: Inline scenario results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioResultData"
+
+  /api/examples/dispatcher-scenario:
+    get:
+      tags: [Viz]
+      summary: Run dispatcher example scenario
+      description: >
+        Executes the built-in dispatcher demonstration scenario that shows
+        coroutines running on different dispatchers (Default, IO, Main, etc.).
+      operationId: runDispatcherExample
+      responses:
+        "200":
+          description: Scenario executed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioResponse"
+
+  # ==========================================================================
+  # TESTS (DEPRECATED)
+  # ==========================================================================
+  /api/tests/run-all:
+    get:
+      tags: [Tests]
+      summary: Legacy test runner (deprecated)
+      description: >
+        Deprecated endpoint. Returns a message directing callers to the
+        /api/scenarios endpoints instead.
+      operationId: runAllTests
+      deprecated: true
+      responses:
+        "200":
+          description: Redirect message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioResponse"
+
+# ===========================================================================
+# COMPONENTS
+# ===========================================================================
 components:
-  schemas: { }
+  # =========================================================================
+  # PARAMETERS
+  # =========================================================================
+  parameters:
+    SessionIdPath:
+      name: id
+      in: path
+      required: true
+      description: Unique session identifier
+      schema:
+        type: string
+
+    SessionIdQuery:
+      name: sessionId
+      in: query
+      required: false
+      description: >
+        Existing session ID to reuse. If omitted, a new session is created
+        automatically.
+      schema:
+        type: string
+
+  # =========================================================================
+  # SCHEMAS
+  # =========================================================================
+  schemas:
+    # -----------------------------------------------------------------------
+    # Error
+    # -----------------------------------------------------------------------
+    ErrorResponse:
+      type: object
+      description: Standard error envelope returned on 4xx/5xx responses
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+
+    # -----------------------------------------------------------------------
+    # Health
+    # -----------------------------------------------------------------------
+    HealthStatus:
+      type: object
+      description: >
+        Application health report including uptime, active session count,
+        and JVM memory usage.
+      required: [status, sessions, uptimeMs, memory]
+      properties:
+        status:
+          type: string
+          description: "Health status: UP or DEGRADED"
+          enum: [UP, DEGRADED]
+        sessions:
+          type: integer
+          description: Number of currently active visualization sessions
+        uptimeMs:
+          type: integer
+          format: int64
+          description: Milliseconds since the application started
+        memory:
+          $ref: "#/components/schemas/MemoryInfo"
+
+    MemoryInfo:
+      type: object
+      description: JVM heap memory usage statistics
+      required: [usedMb, maxMb, usagePercent]
+      properties:
+        usedMb:
+          type: integer
+          format: int64
+          description: Currently used heap memory in megabytes
+        maxMb:
+          type: integer
+          format: int64
+          description: Maximum available heap memory in megabytes
+        usagePercent:
+          type: number
+          format: double
+          description: "Heap usage as a percentage (0.0 - 100.0)"
+
+    # -----------------------------------------------------------------------
+    # Sessions
+    # -----------------------------------------------------------------------
+    SessionInfo:
+      type: object
+      description: >
+        Lightweight summary of a visualization session, returned when
+        listing all sessions.
+      required: [sessionId, coroutineCount, eventCount]
+      properties:
+        sessionId:
+          type: string
+          description: Unique session identifier
+        coroutineCount:
+          type: integer
+          description: Number of coroutines tracked in this session
+        eventCount:
+          type: integer
+          description: Total number of events recorded in this session
+
+    SessionSnapshotResponse:
+      type: object
+      description: >
+        Full current-state snapshot of a session, including the list of all
+        coroutine nodes and their states.
+      required: [sessionId, coroutineCount, eventCount, coroutines]
+      properties:
+        sessionId:
+          type: string
+          description: Unique session identifier
+        coroutineCount:
+          type: integer
+          description: Number of coroutines in the session
+        eventCount:
+          type: integer
+          description: Total number of events recorded
+        coroutines:
+          type: array
+          description: All coroutine nodes in the session
+          items:
+            $ref: "#/components/schemas/CoroutineNodeDto"
+
+    CoroutineNodeDto:
+      type: object
+      description: >
+        Serializable representation of a coroutine's current state within a
+        session snapshot.
+      required: [id, jobId, scopeId, state]
+      properties:
+        id:
+          type: string
+          description: Unique coroutine identifier
+        jobId:
+          type: string
+          description: Associated Job identifier
+        parentId:
+          type: string
+          nullable: true
+          description: Parent coroutine ID, null for root coroutines
+        scopeId:
+          type: string
+          description: Owning VizScope identifier
+        label:
+          type: string
+          nullable: true
+          description: Human-readable label (if assigned)
+        state:
+          type: string
+          description: "Current coroutine state"
+          enum: [CREATED, RUNNING, SUSPENDED, COMPLETED, CANCELLED, FAILED]
+
+    # -----------------------------------------------------------------------
+    # Events
+    # -----------------------------------------------------------------------
+    VizEvent:
+      type: object
+      description: >
+        Base polymorphic event type. Every event carries a session ID,
+        monotonic sequence number, nanosecond timestamp, and a kind
+        discriminator. Concrete subtypes include CoroutineCreated,
+        CoroutineStarted, CoroutineSuspended, CoroutineResumed,
+        CoroutineCompleted, CoroutineCancelled, CoroutineFailed,
+        ChannelCreated, ChannelSendStarted, ChannelSendCompleted,
+        FlowCreated, FlowValueEmitted, and many more (32+ event types).
+      required: [sessionId, seq, tsNanos, kind]
+      properties:
+        sessionId:
+          type: string
+          description: Session this event belongs to
+        seq:
+          type: integer
+          format: int64
+          description: Monotonically increasing sequence number within the session
+        tsNanos:
+          type: integer
+          format: int64
+          description: Nanosecond timestamp (from System.nanoTime())
+        kind:
+          type: string
+          description: >
+            Event type discriminator (e.g. "CoroutineCreated",
+            "ChannelSendCompleted", "FlowValueEmitted")
+      additionalProperties: true
+
+    # -----------------------------------------------------------------------
+    # Projections
+    # -----------------------------------------------------------------------
+    HierarchyNode:
+      type: object
+      description: >
+        A node in the coroutine hierarchy tree. Contains parent-child
+        relationships, state, timing, dispatcher, and thread information.
+      required: [id, name, scopeId, state, createdAtNanos, jobId]
+      properties:
+        id:
+          type: string
+          description: Unique coroutine identifier
+        parentId:
+          type: string
+          nullable: true
+          description: Parent coroutine ID, null for root coroutines
+        children:
+          type: array
+          description: Child coroutine IDs
+          items:
+            type: string
+        name:
+          type: string
+          description: Display name (label or auto-generated)
+        scopeId:
+          type: string
+          description: Owning VizScope identifier
+        state:
+          type: string
+          description: "Current coroutine state"
+          enum: [CREATED, RUNNING, SUSPENDED, COMPLETED, CANCELLED, FAILED]
+        createdAtNanos:
+          type: integer
+          format: int64
+          description: Nanosecond timestamp when the coroutine was created
+        completedAtNanos:
+          type: integer
+          format: int64
+          nullable: true
+          description: Nanosecond timestamp when the coroutine finished (null if still active)
+        dispatcherId:
+          type: string
+          nullable: true
+          description: Assigned dispatcher identifier
+        dispatcherName:
+          type: string
+          nullable: true
+          description: Human-readable dispatcher name (e.g. "Dispatchers.Default")
+        currentThreadId:
+          type: integer
+          format: int64
+          nullable: true
+          description: System thread ID currently executing this coroutine
+        currentThreadName:
+          type: string
+          nullable: true
+          description: Name of the thread currently executing this coroutine
+        jobId:
+          type: string
+          description: Associated Job identifier
+        exceptionType:
+          type: string
+          nullable: true
+          description: Exception class name if the coroutine failed
+        exceptionMessage:
+          type: string
+          nullable: true
+          description: Exception message if the coroutine failed
+        activeChildrenIds:
+          type: array
+          description: IDs of children that are still active
+          items:
+            type: string
+        activeChildrenCount:
+          type: integer
+          description: Number of currently active children
+
+    ThreadEvent:
+      type: object
+      description: >
+        Records a coroutine's assignment to or release from a thread.
+        Used for thread lane visualizations.
+      required: [coroutineId, threadId, threadName, timestamp, eventType]
+      properties:
+        coroutineId:
+          type: string
+          description: Coroutine involved in the thread event
+        threadId:
+          type: integer
+          format: int64
+          description: System thread ID
+        threadName:
+          type: string
+          description: Human-readable thread name
+        timestamp:
+          type: integer
+          format: int64
+          description: Nanosecond timestamp of the event
+        eventType:
+          type: string
+          description: "Type of thread event"
+          enum: [ASSIGNED, RELEASED]
+        dispatcherName:
+          type: string
+          nullable: true
+          description: Name of the dispatcher that assigned the thread
+
+    CoroutineTimeline:
+      type: object
+      description: >
+        Detailed timeline for a single coroutine with duration breakdown
+        and ordered event summaries.
+      required: [coroutineId, name, state]
+      properties:
+        coroutineId:
+          type: string
+          description: Unique coroutine identifier
+        name:
+          type: string
+          description: Display name of the coroutine
+        state:
+          type: string
+          description: "Current coroutine state"
+          enum: [CREATED, RUNNING, SUSPENDED, COMPLETED, CANCELLED, FAILED]
+        totalDuration:
+          type: integer
+          format: int64
+          nullable: true
+          description: Total time from creation to completion in nanoseconds
+        activeDuration:
+          type: integer
+          format: int64
+          nullable: true
+          description: Time spent actively running (not suspended) in nanoseconds
+        suspendedDuration:
+          type: integer
+          format: int64
+          nullable: true
+          description: Time spent in suspended state in nanoseconds
+        parentId:
+          type: string
+          nullable: true
+          description: Parent coroutine ID
+        childrenIds:
+          type: array
+          description: IDs of child coroutines
+          items:
+            type: string
+        events:
+          type: array
+          description: Ordered list of event summaries for this coroutine
+          items:
+            $ref: "#/components/schemas/TimelineEventSummary"
+
+    TimelineEventSummary:
+      type: object
+      description: Simplified event summary for timeline display
+      required: [seq, tsNanos, kind]
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: Event sequence number
+        tsNanos:
+          type: integer
+          format: int64
+          description: Nanosecond timestamp
+        kind:
+          type: string
+          description: Event type (e.g. "CoroutineStarted", "CoroutineSuspended")
+        threadName:
+          type: string
+          nullable: true
+          description: Thread name at the time of the event
+        dispatcherName:
+          type: string
+          nullable: true
+          description: Dispatcher name at the time of the event
+        reason:
+          type: string
+          nullable: true
+          description: Reason for suspension (for suspension events)
+
+    # -----------------------------------------------------------------------
+    # Comparison
+    # -----------------------------------------------------------------------
+    SessionComparison:
+      type: object
+      description: >
+        Structured diff between two visualization sessions, including
+        aggregate metrics and per-coroutine breakdowns.
+      required:
+        - sessionA
+        - sessionB
+        - coroutineCountDiff
+        - eventCountDiff
+        - totalDurationDiffNanos
+        - coroutinesOnlyInA
+        - coroutinesOnlyInB
+        - commonCoroutines
+      properties:
+        sessionA:
+          type: string
+          description: ID of the first (baseline) session
+        sessionB:
+          type: string
+          description: ID of the second (comparison) session
+        coroutineCountDiff:
+          type: integer
+          description: Difference in coroutine count (B minus A)
+        eventCountDiff:
+          type: integer
+          description: Difference in event count (B minus A)
+        totalDurationDiffNanos:
+          type: integer
+          format: int64
+          description: Difference in total session duration in nanoseconds (B minus A)
+        coroutinesOnlyInA:
+          type: array
+          description: Coroutine IDs present only in session A
+          items:
+            type: string
+        coroutinesOnlyInB:
+          type: array
+          description: Coroutine IDs present only in session B
+          items:
+            type: string
+        commonCoroutines:
+          type: array
+          description: Per-coroutine comparison for coroutines in both sessions
+          items:
+            $ref: "#/components/schemas/CoroutineComparison"
+
+    CoroutineComparison:
+      type: object
+      description: >
+        Comparison of a single coroutine that exists in both sessions.
+      required: [coroutineId, stateA, stateB, eventCountA, eventCountB]
+      properties:
+        coroutineId:
+          type: string
+          description: Shared coroutine identifier
+        label:
+          type: string
+          nullable: true
+          description: Coroutine label (taken from session A if available)
+        stateA:
+          type: string
+          description: Coroutine state in session A
+        stateB:
+          type: string
+          description: Coroutine state in session B
+        eventCountA:
+          type: integer
+          description: Number of events for this coroutine in session A
+        eventCountB:
+          type: integer
+          description: Number of events for this coroutine in session B
+
+    # -----------------------------------------------------------------------
+    # Validation
+    # -----------------------------------------------------------------------
+    ValidationResponse:
+      type: object
+      description: >
+        Aggregated validation results for a session, including individual
+        rule outcomes and a timing analysis report.
+      required: [sessionId, results, timing]
+      properties:
+        sessionId:
+          type: string
+          description: Session that was validated
+        results:
+          type: array
+          description: Individual validation rule results (Pass or Fail)
+          items:
+            $ref: "#/components/schemas/ValidationResult"
+        timing:
+          $ref: "#/components/schemas/TimingReport"
+
+    ValidationResult:
+      type: object
+      description: >
+        Result of a single validation rule. Discriminated by type field:
+        "Pass" when the rule succeeded, "Fail" when it detected a violation.
+      required: [type, ruleName, message]
+      properties:
+        type:
+          type: string
+          description: Discriminator for Pass or Fail
+          enum: [Pass, Fail]
+        ruleName:
+          type: string
+          description: Machine-readable name of the validation rule
+        message:
+          type: string
+          description: Human-readable summary of the result
+        details:
+          type: string
+          description: Detailed failure information (only present on Fail results)
+      discriminator:
+        propertyName: type
+
+    ValidationRule:
+      type: object
+      description: Descriptor for an available validation rule
+      required: [name, description]
+      properties:
+        name:
+          type: string
+          description: Machine-readable rule name (e.g. "CreatedHasStarted")
+        description:
+          type: string
+          description: Human-readable explanation of what the rule checks
+
+    TimingReport:
+      type: object
+      description: >
+        Timing analysis of a coroutine event stream, containing per-coroutine
+        durations, suspension breakdowns, and the overall stream duration.
+      required: [coroutineDurations, suspensionDurations, totalDuration]
+      properties:
+        coroutineDurations:
+          type: object
+          description: >
+            Map of coroutine ID to total duration in nanoseconds (from first
+            event to last event for that coroutine)
+          additionalProperties:
+            type: integer
+            format: int64
+        suspensionDurations:
+          type: object
+          description: >
+            Map of coroutine ID to list of individual suspension durations
+            in nanoseconds
+          additionalProperties:
+            type: array
+            items:
+              type: integer
+              format: int64
+        totalDuration:
+          type: integer
+          format: int64
+          description: Overall duration of the event stream in nanoseconds
+
+    # -----------------------------------------------------------------------
+    # Scenarios
+    # -----------------------------------------------------------------------
+    ScenarioResponse:
+      type: object
+      description: Simple success/message response for scenario endpoints
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          description: Whether the scenario completed successfully
+        message:
+          type: string
+          description: Human-readable result message
+
+    ScenarioCompletionResponse:
+      type: object
+      description: >
+        Detailed response returned after a built-in scenario completes,
+        including the session ID for follow-up queries and event streaming.
+      required: [success, sessionId, message, coroutineCount, eventCount]
+      properties:
+        success:
+          type: boolean
+          description: Whether the scenario completed successfully
+        sessionId:
+          type: string
+          description: Session ID where the scenario events were recorded
+        message:
+          type: string
+          description: Human-readable result message
+        coroutineCount:
+          type: integer
+          description: Number of coroutines created during the scenario
+        eventCount:
+          type: integer
+          description: Total number of events produced by the scenario
+
+    ScenarioResultData:
+      type: object
+      description: >
+        Inline scenario results containing the full event list and coroutine
+        node data in a single response. Used by the viz helper endpoint.
+      required: [success, sessionId, events, coroutines, eventCount]
+      properties:
+        success:
+          type: boolean
+          description: Whether the scenario completed successfully
+        sessionId:
+          type: string
+          description: Temporary session ID
+        events:
+          type: array
+          description: All events produced by the scenario
+          items:
+            $ref: "#/components/schemas/VizEvent"
+        coroutines:
+          type: array
+          description: All coroutine nodes and their final states
+          items:
+            $ref: "#/components/schemas/CoroutineNodeDto"
+        eventCount:
+          type: integer
+          description: Total number of events
+
+    ScenarioExecutionResponse:
+      type: object
+      description: >
+        Response from custom scenario execution. Includes optional error
+        details on failure.
+      required: [success, sessionId, message]
+      properties:
+        success:
+          type: boolean
+          description: Whether the scenario completed successfully
+        sessionId:
+          type: string
+          description: Session ID (empty string on validation errors)
+        message:
+          type: string
+          description: Human-readable result or error message
+        coroutineCount:
+          type: integer
+          description: Number of coroutines created (0 on failure)
+        eventCount:
+          type: integer
+          description: Total number of events produced (0 on failure)
+        errors:
+          type: array
+          nullable: true
+          description: Error details (stack traces or validation messages)
+          items:
+            type: string
+
+    ScenarioConfigRequest:
+      type: object
+      description: >
+        User-defined scenario configuration. Defines a tree of coroutines
+        with actions to execute. Submitted as the request body for the
+        custom scenario endpoint.
+      required: [name, root]
+      properties:
+        name:
+          type: string
+          description: Display name for the scenario
+        description:
+          type: string
+          nullable: true
+          description: Optional description of what the scenario demonstrates
+        sessionId:
+          type: string
+          nullable: true
+          description: Existing session ID to reuse (creates new if omitted)
+        root:
+          $ref: "#/components/schemas/CoroutineConfigDTO"
+
+    CoroutineConfigDTO:
+      type: object
+      description: >
+        Configuration for a single coroutine in a custom scenario tree.
+        Coroutines can have actions and nested children.
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this coroutine within the scenario
+        label:
+          type: string
+          description: Display label for the coroutine
+        parentId:
+          type: string
+          nullable: true
+          description: Parent coroutine ID (for flat configuration style)
+        actions:
+          type: array
+          description: Actions to execute inside this coroutine
+          items:
+            $ref: "#/components/schemas/ActionDTO"
+        children:
+          type: array
+          description: Child coroutines launched within this coroutine
+          items:
+            $ref: "#/components/schemas/CoroutineConfigDTO"
+
+    ActionDTO:
+      type: object
+      description: >
+        An action to execute inside a coroutine. Supported types are
+        "delay", "throw"/"exception", "log", and "custom".
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: >
+            Action type: "delay" (pause execution), "throw"/"exception"
+            (throw an exception), "log" (log a message), "custom"
+            (execute custom code)
+          enum: [delay, throw, exception, log, custom]
+        params:
+          type: object
+          description: >
+            Action-specific parameters. For "delay": durationMs (long).
+            For "throw": exceptionType (string), message (string).
+            For "log": message (string). For "custom": code (string).
+          additionalProperties:
+            type: string
+
+    SyncScenarioResponse:
+      type: object
+      description: >
+        Response from synchronization primitive scenario execution.
+      required: [success, sessionId, scenario, message]
+      properties:
+        success:
+          type: boolean
+          description: Whether the scenario completed successfully
+        sessionId:
+          type: string
+          description: Session ID where events were recorded (empty on failure)
+        scenario:
+          type: string
+          description: Name of the scenario that was executed
+        message:
+          type: string
+          description: Human-readable result message
+        eventCount:
+          type: integer
+          description: Number of events produced (0 on failure)
+
+    ScenarioInfo:
+      type: object
+      description: >
+        Descriptor for a synchronization scenario in the catalog.
+      required: [path, name, type, description]
+      properties:
+        path:
+          type: string
+          description: URL path suffix (e.g. "mutex/counter")
+        name:
+          type: string
+          description: Human-readable scenario name
+        type:
+          type: string
+          description: Category of sync primitive (Mutex, Semaphore, Combined)
+        description:
+          type: string
+          description: Brief description of what the scenario demonstrates
+
+    ScenarioCatalogEntry:
+      type: object
+      description: >
+        Entry in the general scenario catalog. Includes metadata for
+        display in the frontend scenario picker.
+      required: [id, name, description, endpoint]
+      properties:
+        id:
+          type: string
+          description: Unique scenario identifier
+        name:
+          type: string
+          description: Human-readable display name
+        description:
+          type: string
+          description: Detailed description of the scenario
+        endpoint:
+          type: string
+          description: HTTP endpoint to trigger the scenario
+        category:
+          type: string
+          description: Scenario category (basic, channel, realistic, flow, pattern)
+        duration:
+          type: string
+          description: Estimated execution duration (e.g. "~2-3 seconds")
+
+    PatternInfo:
+      type: object
+      description: >
+        Entry in the pattern scenario catalog with full metadata.
+      required: [id, name, description, endpoint, duration]
+      properties:
+        id:
+          type: string
+          description: Unique pattern identifier
+        name:
+          type: string
+          description: Human-readable pattern name
+        description:
+          type: string
+          description: Detailed description of the concurrency pattern
+        endpoint:
+          type: string
+          description: HTTP endpoint to trigger the pattern scenario
+        category:
+          type: string
+          description: Always "pattern"
+          default: pattern
+        duration:
+          type: string
+          description: Estimated execution duration
