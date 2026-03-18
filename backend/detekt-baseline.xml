@@ -27,6 +27,8 @@
     <ID>LongMethod:VizScope.kt$VizScope$suspend fun vizLaunch( label: String? = null, context: CoroutineContext = EmptyCoroutineContext, block: suspend VizScope.() -> Unit, ): Job</ID>
     <ID>LongParameterList:InstrumentedDeferred.kt$InstrumentedDeferred$( private val delegate: Deferred&lt;T>, private val session: VizSession, private val deferredId: String, private val coroutineId: String, private val jobId: String, private val parentCoroutineId: String?, private val scopeId: String, private val label: String?, )</ID>
     <ID>LoopWithTooManyJumpStatements:StructuredConcurrencyValidator.kt$StructuredConcurrencyValidator$for</ID>
+    <ID>MagicNumber:Compression.kt$0.5</ID>
+    <ID>MagicNumber:Compression.kt$1024</ID>
     <ID>MagicNumber:DispatcherExample.kt$100</ID>
     <ID>MagicNumber:DispatcherExample.kt$60</ID>
     <ID>MagicNumber:FlowEventContext.kt$100</ID>
