@@ -29,8 +29,10 @@ export function CoroutineTree({ coroutines }: CoroutineTreeProps) {
   )
 }
 
+type CoroutineTreeNode = CoroutineNode & { children: CoroutineTreeNode[] }
+
 interface TreeNodeProps {
-  node: CoroutineNode & { children: CoroutineNode[] }
+  node: CoroutineTreeNode
   depth: number
 }
 

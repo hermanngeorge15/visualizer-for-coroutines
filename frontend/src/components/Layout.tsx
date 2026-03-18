@@ -19,7 +19,7 @@ export function Layout({ children }: LayoutProps) {
         <NavbarContent justify="center">
           <NavbarItem>
             <Link to="/">
-              {({ isActive }) => (
+              {({ isActive }: { isActive: boolean }) => (
                 <Button variant={isActive ? 'flat' : 'light'} color={isActive ? 'primary' : 'default'}>
                   Home
                 </Button>
@@ -28,7 +28,7 @@ export function Layout({ children }: LayoutProps) {
           </NavbarItem>
           <NavbarItem>
             <Link to="/sessions">
-              {({ isActive }) => (
+              {({ isActive }: { isActive: boolean }) => (
                 <Button variant={isActive ? 'flat' : 'light'} color={isActive ? 'primary' : 'default'}>
                   Sessions
                 </Button>
@@ -37,7 +37,7 @@ export function Layout({ children }: LayoutProps) {
           </NavbarItem>
           <NavbarItem>
             <Link to="/scenarios">
-              {({ isActive }) => (
+              {({ isActive }: { isActive: boolean }) => (
                 <Button variant={isActive ? 'flat' : 'light'} color={isActive ? 'primary' : 'default'}>
                   Scenarios
                 </Button>

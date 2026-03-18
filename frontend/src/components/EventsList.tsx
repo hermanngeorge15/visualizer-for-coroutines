@@ -31,7 +31,8 @@ function parseServiceLabel(label: string | null | undefined): { service: string;
   const dotMatch = label.match(/^([A-Za-z]+(?:Service|Repository|Api|Client|Generator|Processor|Validator)?)\.([\w-]+)$/)
 
   if (dotMatch) {
-    const [, service, method] = dotMatch
+    const service = dotMatch[1] ?? ''
+    const method = dotMatch[2] ?? ''
     return {
       service,
       method,

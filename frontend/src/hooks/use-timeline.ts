@@ -130,7 +130,7 @@ export function useTimelineVisualizationData(timeline: CoroutineTimeline | undef
   return useMemo(() => {
     if (!timeline?.events || timeline.events.length === 0) return []
 
-    const baseTime = timeline.events[0].timestamp
+    const baseTime = timeline.events[0]!.timestamp
     const data: Array<{
       seq: number
       relativeTime: number
@@ -155,7 +155,7 @@ export function useTimelineVisualizationData(timeline: CoroutineTimeline | undef
         relativeTime,
         kind: event.kind,
         state,
-        duration: event.duration,
+        duration: event.duration ?? undefined,
         metadata: {
           threadId: event.threadId,
           threadName: event.threadName,

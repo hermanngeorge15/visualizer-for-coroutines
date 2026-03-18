@@ -37,8 +37,9 @@ export function useHierarchyTree(sessionId: string | undefined, scopeId?: string
   const tree = useMemo(() => {
     if (!nodes || nodes.length === 0) return []
 
-    const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [] as typeof nodes }]))
-    const roots: typeof nodes = []
+    type TreeNode = HierarchyNode & { children: HierarchyNode[] }
+    const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [] as HierarchyNode[] } as TreeNode]))
+    const roots: TreeNode[] = []
 
     nodes.forEach(node => {
       const treeNode = nodeMap.get(node.id)
@@ -98,7 +99,7 @@ export function useHierarchyStats(sessionId: string | undefined) {
         return 0
       }
 
-      const parent = nodes.find(n => n.id === node.parentId)
+      const parent = nodes?.find(n => n.id === node.parentId)
       const depth = parent ? calculateDepth(parent) + 1 : 0
       depths.set(node.id, depth)
       return depth

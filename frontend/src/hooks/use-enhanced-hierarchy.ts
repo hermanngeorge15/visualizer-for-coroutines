@@ -45,10 +45,10 @@ export function useEnhancedHierarchy(
           // Add to parent's children
           if (event.parentCoroutineId) {
             const parent = newNodes.get(event.parentCoroutineId)
-            if (parent && !parent.children.includes(event.coroutineId)) {
+            if (parent && !(parent.children as string[]).includes(event.coroutineId)) {
               newNodes.set(event.parentCoroutineId, {
                 ...parent,
-                children: [...parent.children, event.coroutineId],
+                children: [...(parent.children as string[]), event.coroutineId],
               })
             }
           }
@@ -92,7 +92,7 @@ export function useEnhancedHierarchy(
           const node = newNodes.get(event.coroutineId)
           if (node) {
             // Check if has active children
-            const hasActiveChildren = node.children.some(childId => {
+            const hasActiveChildren = (node.children as string[]).some(childId => {
               const child = newNodes.get(childId)
               return child && ['ACTIVE', 'SUSPENDED', 'CREATED'].includes(child.state)
             })
@@ -238,7 +238,7 @@ export function useEnhancedHierarchy(
     const node = nodes.get(nodeId)
     if (!node) return []
     
-    return node.children
+    return (node.children as string[])
       .map(childId => nodes.get(childId))
       .filter((child): child is HierarchyNode => child !== undefined)
   }, [nodes])

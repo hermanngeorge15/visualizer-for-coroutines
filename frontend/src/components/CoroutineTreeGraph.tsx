@@ -428,8 +428,8 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
                 )}
               </div>
               <TreeNodeComponent
-                key={node.children[0].id}
-                node={node.children[0]}
+                key={node.children[0]!.id}
+                node={node.children[0]!}
                 level={level + 1}
                 siblingIndex={0}
               />

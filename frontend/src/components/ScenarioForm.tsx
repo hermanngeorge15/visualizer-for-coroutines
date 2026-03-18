@@ -51,7 +51,7 @@ export function ScenarioForm({ scenario, onSubmit, isSubmitting }: ScenarioFormP
         errorMessage={errors.sessionId?.message}
       >
         {sessions?.map(session => (
-          <SelectItem key={session.sessionId} value={session.sessionId}>
+          <SelectItem key={session.sessionId}>
             {session.sessionId} ({session.coroutineCount} coroutines)
           </SelectItem>
         )) || []}

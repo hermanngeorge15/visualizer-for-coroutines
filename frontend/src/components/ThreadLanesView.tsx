@@ -94,7 +94,7 @@ export function ThreadLanesView({ sessionId }: ThreadLanesViewProps) {
                 ))}
               </div>
               
-              {dispatcher?.queueDepth !== undefined && dispatcher.queueDepth > 0 && (
+              {dispatcher?.queueDepth != null && dispatcher.queueDepth > 0 && (
                 <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
                   <div className="text-sm font-semibold text-warning">
                     Queue Depth: {dispatcher.queueDepth}

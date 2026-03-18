@@ -453,7 +453,7 @@ export interface ThreadActivity {
 export interface HierarchyNode {
   id: string
   parentId: string | null
-  children: string[]
+  children: string[] | HierarchyNode[]
   name: string
   scopeId: string
   state: CoroutineState
