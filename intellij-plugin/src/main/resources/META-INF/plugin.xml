@@ -1,0 +1,58 @@
+<idea-plugin>
+    <id>com.jh.coroutine-visualizer</id>
+    <name>Kotlin Coroutine Visualizer</name>
+    <vendor url="https://github.com/hermanngeorge15/visualizer-for-coroutines">JH</vendor>
+
+    <description><![CDATA[
+    Visualize Kotlin coroutine execution directly in IntelliJ IDEA.
+
+    <ul>
+        <li>Real-time coroutine hierarchy tree view</li>
+        <li>Timeline visualization with suspension points</li>
+        <li>Event log with filtering and search</li>
+        <li>Integration with VizScope instrumentation library</li>
+        <li>DebugProbes fallback for zero-configuration use</li>
+    </ul>
+
+    <h3>Getting Started</h3>
+    <ol>
+        <li>Add <code>coroutine-viz-core</code> dependency to your project</li>
+        <li>Replace <code>CoroutineScope</code> with <code>VizScope</code></li>
+        <li>Open the Coroutine Visualizer tool window (View → Tool Windows)</li>
+        <li>Run your application — events appear in real-time</li>
+    </ol>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Tool Window -->
+        <toolWindow id="Coroutine Visualizer"
+                    secondary="true"
+                    anchor="bottom"
+                    factoryClass="com.jh.coroutinevisualizer.CoroutineVisualizerToolWindowFactory"
+                    icon="AllIcons.Actions.Execute"/>
+
+        <!-- Settings -->
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.jh.coroutinevisualizer.settings.VisualizerSettingsConfigurable"
+                id="com.jh.coroutinevisualizer.settings"
+                displayName="Coroutine Visualizer"/>
+
+        <!-- Startup activity to start event receiver -->
+        <postStartupActivity
+                implementation="com.jh.coroutinevisualizer.CoroutineVisualizerStartupActivity"/>
+    </extensions>
+
+    <actions>
+        <action id="com.jh.coroutinevisualizer.RunWithVisualizer"
+                class="com.jh.coroutinevisualizer.actions.RunWithVisualizerAction"
+                text="Run with Coroutine Visualizer"
+                description="Run the current configuration with coroutine visualization enabled"
+                icon="AllIcons.Actions.Execute">
+            <add-to-group group-id="RunMenu" anchor="after" relative-to-action="Run"/>
+        </action>
+    </actions>
+</idea-plugin>
