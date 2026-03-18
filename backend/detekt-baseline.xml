@@ -143,6 +143,7 @@
     <ID>TooGenericExceptionThrown:StructuredConcurrencyTest.kt$StructuredConcurrencyTest$throw RuntimeException("Child-2 intentional failure!")</ID>
     <ID>TooGenericExceptionThrown:StructuredConcurrencyTest.kt$StructuredConcurrencyTest$throw RuntimeException("Grandchild failure!")</ID>
     <ID>TooGenericExceptionThrown:VizDispatchersIntegrationTest.kt$VizDispatchersIntegrationTest$throw RuntimeException("Simulated failure")</ID>
+    <ID>TooManyFunctions:AuthTest.kt$AuthTest</ID>
     <ID>TooManyFunctions:EventContext.kt$com.jh.proj.coroutineviz.session.EventContext.kt</ID>
     <ID>TooManyFunctions:EventSerializationTest.kt$EventSerializationTest</ID>
     <ID>TooManyFunctions:FlowEventContext.kt$com.jh.proj.coroutineviz.session.FlowEventContext.kt</ID>

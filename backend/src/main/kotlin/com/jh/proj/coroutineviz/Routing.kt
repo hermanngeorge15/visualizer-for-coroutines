@@ -18,16 +18,21 @@ import io.ktor.server.sse.*
 fun Application.configureRouting() {
     install(SSE)
     routing {
+        // Public routes — no auth required
         registerRootRoutes()
-        registerVizScenarioRoutes()
-        registerSyncScenarioRoutes()
-        registerTestRoutes()
-        registerSessionRoutes()
-        registerValidationRoutes()
-        registerScenarioRunnerRoutes()
-        registerFlowScenarioRoutes()
-        registerPatternRoutes()
         registerHealthRoutes()
-        registerComparisonRoutes()
+
+        // Protected routes — require API key when configured
+        authenticatedApi {
+            registerVizScenarioRoutes()
+            registerSyncScenarioRoutes()
+            registerTestRoutes()
+            registerSessionRoutes()
+            registerValidationRoutes()
+            registerScenarioRunnerRoutes()
+            registerFlowScenarioRoutes()
+            registerPatternRoutes()
+            registerComparisonRoutes()
+        }
     }
 }
