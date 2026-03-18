@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Manages active visualization sessions.
- * 
+ *
  * Sessions are stored in memory and can be accessed across multiple API calls.
  * This allows clients to:
  * - Create a session
@@ -17,28 +17,29 @@ import java.util.concurrent.ConcurrentHashMap
 object SessionManager {
     private val logger = LoggerFactory.getLogger(SessionManager::class.java)
     private val sessions = ConcurrentHashMap<String, VizSession>()
-    
+
     /**
      * Create a new visualization session.
      */
     fun createSession(name: String? = null): VizSession {
-        val sessionId = name?.let { "$it-${System.currentTimeMillis()}" }
-            ?: "session-${System.currentTimeMillis()}"
-        
+        val sessionId =
+            name?.let { "$it-${System.currentTimeMillis()}" }
+                ?: "session-${System.currentTimeMillis()}"
+
         val session = VizSession(sessionId)
         sessions[sessionId] = session
-        
+
         logger.info("Created session: $sessionId")
         return session
     }
-    
+
     /**
      * Get an existing session by ID.
      */
     fun getSession(sessionId: String): VizSession? {
         return sessions[sessionId]
     }
-    
+
     /**
      * List all active sessions.
      */
@@ -47,24 +48,25 @@ object SessionManager {
             SessionInfo(
                 sessionId = session.sessionId,
                 coroutineCount = session.snapshot.coroutines.size,
-                eventCount = session.store.all().size
+                eventCount = session.store.all().size,
             )
         }
     }
-    
+
     /**
      * Close and remove a session.
      */
     fun closeSession(sessionId: String): Boolean {
         val removed = sessions.remove(sessionId)
         if (removed != null) {
-            removed.close()  // Clean up session resources
+            // Clean up session resources
+            removed.close()
             logger.info("Closed session: $sessionId")
             return true
         }
         return false
     }
-    
+
     /**
      * Clear all sessions (useful for testing).
      */

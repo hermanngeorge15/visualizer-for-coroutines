@@ -24,10 +24,12 @@ data class DeferredAwaitStarted(
     override val seq: Long,
     override val tsNanos: Long,
     val deferredId: String,
-    val coroutineId: String,      // The deferred's coroutine
-    val awaiterId: String?,       // Who is waiting
+    // The deferred's coroutine
+    val coroutineId: String,
+    // Who is waiting
+    val awaiterId: String?,
     val scopeId: String,
-    val label: String?
+    val label: String?,
 ) : VizEvent {
     override val kind: String get() = "DeferredAwaitStarted"
 }

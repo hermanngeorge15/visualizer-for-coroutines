@@ -27,12 +27,17 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class HierarchyNode(
-    val id: String,                          // coroutineId
-    val parentId: String?,                   // parentCoroutineId
-    val children: List<String> = emptyList(), // child coroutine IDs
-    val name: String,                        // label or generated name
+    // coroutineId
+    val id: String,
+    // parentCoroutineId
+    val parentId: String?,
+    // child coroutine IDs
+    val children: List<String> = emptyList(),
+    // label or generated name
+    val name: String,
     val scopeId: String,
-    val state: String,                       // "CREATED", "RUNNING", "SUSPENDED", "COMPLETED", "CANCELLED", "FAILED"
+    // "CREATED", "RUNNING", "SUSPENDED", "COMPLETED", "CANCELLED", "FAILED"
+    val state: String,
     val createdAtNanos: Long,
     val completedAtNanos: Long? = null,
     val dispatcherId: String? = null,
@@ -40,8 +45,9 @@ data class HierarchyNode(
     val currentThreadId: Long? = null,
     val currentThreadName: String? = null,
     val jobId: String,
-    val exceptionType: String? = null,       // If failed
+    // If failed
+    val exceptionType: String? = null,
     val exceptionMessage: String? = null,
     val activeChildrenIds: List<String> = emptyList(),
-    val activeChildrenCount: Int = 0
+    val activeChildrenCount: Int = 0,
 )

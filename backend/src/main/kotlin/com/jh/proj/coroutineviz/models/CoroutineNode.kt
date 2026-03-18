@@ -25,5 +25,5 @@ data class CoroutineNode(
     var state: CoroutineState,
     var threadId: Long? = null,
     var threadName: String? = null,
-    var dispatcherName: String? = null
+    var dispatcherName: String? = null,
 )

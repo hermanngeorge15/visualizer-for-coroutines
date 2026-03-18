@@ -17,7 +17,7 @@ data class ChannelClosed(
     override val seq: Long,
     override val tsNanos: Long,
     val channelId: String,
-    val cause: String? = null
+    val cause: String? = null,
 ) : VizEvent {
     override val kind: String get() = "ChannelClosed"
 }

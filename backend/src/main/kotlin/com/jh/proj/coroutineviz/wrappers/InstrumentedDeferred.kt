@@ -35,12 +35,11 @@ import kotlinx.coroutines.currentCoroutineContext
  * @property parentCoroutineId ID of the parent coroutine, if any
  * @property scopeId ID of the owning VizScope
  * @property label Optional human-readable label
- */
-@OptIn(InternalForInheritanceCoroutinesApi::class)
-/**
+ *
  * Deferred wrapper that emits await lifecycle events and the awaiter's
  * suspension/resumption for visualization.
  */
+@OptIn(InternalForInheritanceCoroutinesApi::class)
 class InstrumentedDeferred<T>(
     private val delegate: Deferred<T>,
     private val session: VizSession,
@@ -49,9 +48,8 @@ class InstrumentedDeferred<T>(
     private val jobId: String,
     private val parentCoroutineId: String?,
     private val scopeId: String,
-    private val label: String?
+    private val label: String?,
 ) : Deferred<T> by delegate {
-
     /**
      * Await the deferred value with visualization tracking.
      *
@@ -77,8 +75,8 @@ class InstrumentedDeferred<T>(
                 coroutineId = coroutineId,
                 awaiterId = awaiterId,
                 scopeId = scopeId,
-                label = label
-            )
+                label = label,
+            ),
         )
 
         // Emit suspension point (only if awaiter exists)
@@ -96,8 +94,8 @@ class InstrumentedDeferred<T>(
                     label = currentCoroutineContext()[VizCoroutineElement]?.label,
                     reason = "await",
                     durationMillis = null,
-                    suspensionPoint = suspensionPoint
-                )
+                    suspensionPoint = suspensionPoint,
+                ),
             )
         }
 
@@ -115,8 +113,8 @@ class InstrumentedDeferred<T>(
                     jobId = currentCoroutineContext()[VizCoroutineElement]?.jobId ?: "unknown",
                     parentCoroutineId = currentCoroutineContext()[VizCoroutineElement]?.parentCoroutineId,
                     scopeId = scopeId,
-                    label = currentCoroutineContext()[VizCoroutineElement]?.label
-                )
+                    label = currentCoroutineContext()[VizCoroutineElement]?.label,
+                ),
             )
         }
 
@@ -130,8 +128,8 @@ class InstrumentedDeferred<T>(
                 coroutineId = coroutineId,
                 awaiterId = awaiterId,
                 scopeId = scopeId,
-                label = label
-            )
+                label = label,
+            ),
         )
 
         return result

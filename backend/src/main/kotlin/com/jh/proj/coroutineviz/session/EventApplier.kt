@@ -29,9 +29,8 @@ import org.slf4j.LoggerFactory
  * @property snapshot The runtime snapshot to update
  */
 class EventApplier(
-    private val snapshot: RuntimeSnapshot
+    private val snapshot: RuntimeSnapshot,
 ) {
-
     fun apply(event: VizEvent) {
         when (event) {
             is CoroutineCreated -> handleCreated(event)
@@ -51,14 +50,15 @@ class EventApplier(
     }
 
     private fun handleCreated(e: CoroutineCreated) {
-        snapshot.coroutines[e.coroutineId] = CoroutineNode(
-            id = e.coroutineId,
-            jobId = e.jobId,
-            parentId = e.parentCoroutineId,
-            scopeId = e.scopeId,
-            label = e.label,
-            state = CoroutineState.CREATED
-        )
+        snapshot.coroutines[e.coroutineId] =
+            CoroutineNode(
+                id = e.coroutineId,
+                jobId = e.jobId,
+                parentId = e.parentCoroutineId,
+                scopeId = e.scopeId,
+                label = e.label,
+                state = CoroutineState.CREATED,
+            )
     }
 
     private fun handleStarted(e: CoroutineStarted) {

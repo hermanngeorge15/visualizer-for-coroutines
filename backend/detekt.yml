@@ -1,0 +1,55 @@
+build:
+  maxIssues: 0
+
+complexity:
+  LongParameterList:
+    ignoreDataClasses: true
+    ignoreDefaultParameters: true
+  LargeClass:
+    excludes:
+      - '**/wrappers/InstrumentedFlow.kt'
+      - '**/wrappers/VizScope.kt'
+      - '**/routes/ScenarioRunnerRoutes.kt'
+  TooManyFunctions:
+    excludes:
+      - '**/wrappers/**'
+      - '**/scenarios/**'
+  CyclomaticComplexMethod:
+    threshold: 20
+
+exceptions:
+  TooGenericExceptionCaught:
+    excludes:
+      - '**/wrappers/**'
+
+naming:
+  FunctionNaming:
+    excludes:
+      - '**/test/**'
+  MatchingDeclarationName:
+    active: false
+  MemberNameEqualsClassName:
+    active: true
+
+style:
+  WildcardImport:
+    active: false
+  MaxLineLength:
+    active: false
+  UnusedImports:
+    active: false
+  MagicNumber:
+    excludes:
+      - '**/test/**'
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotation: true
+    ignoreHashCodeFunction: true
+    ignoreEnums: true
+    ignoreNamedArgument: true
+  ForbiddenComment:
+    active: false
+
+coroutines:
+  GlobalCoroutineUsage:
+    active: true

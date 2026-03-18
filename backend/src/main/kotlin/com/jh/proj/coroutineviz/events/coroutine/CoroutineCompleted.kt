@@ -24,7 +24,7 @@ data class CoroutineCompleted(
     override val jobId: String,
     override val parentCoroutineId: String?,
     override val scopeId: String,
-    override val label: String?
+    override val label: String?,
 ) : CoroutineEvent {
     override val kind: String get() = "CoroutineCompleted"
 }

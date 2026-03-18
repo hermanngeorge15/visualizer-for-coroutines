@@ -26,7 +26,7 @@ data class JobCancellationRequested(
     override val scopeId: String,
     override val label: String?,
     val requestedBy: String? = null,
-    val cause: String? = null
+    val cause: String? = null,
 ) : CoroutineEvent {
     override val kind: String get() = "JobCancellationRequested"
 }

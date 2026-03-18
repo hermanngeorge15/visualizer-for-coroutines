@@ -15,7 +15,8 @@ data class WaitingForChildren(
     override val scopeId: String,
     override val label: String?,
     val activeChildrenCount: Int,
-    val activeChildrenIds: List<String>  // Coroutine IDs of active children
+    // Coroutine IDs of active children
+    val activeChildrenIds: List<String>,
 ) : CoroutineEvent {
     override val kind: String get() = "WaitingForChildren"
 }

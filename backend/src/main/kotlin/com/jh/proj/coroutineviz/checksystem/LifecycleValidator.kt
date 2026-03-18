@@ -13,7 +13,6 @@ import com.jh.proj.coroutineviz.events.coroutine.*
  * - No events should appear for a coroutine after its terminal event
  */
 object LifecycleValidator {
-
     private val TERMINAL_KINDS = setOf("CoroutineCompleted", "CoroutineCancelled", "CoroutineFailed")
 
     /**
@@ -26,9 +25,10 @@ object LifecycleValidator {
         val results = mutableListOf<ValidationResult>()
 
         // Group coroutine events by coroutine ID
-        val byCoroutine = events
-            .filterIsInstance<CoroutineEvent>()
-            .groupBy { it.coroutineId }
+        val byCoroutine =
+            events
+                .filterIsInstance<CoroutineEvent>()
+                .groupBy { it.coroutineId }
 
         for ((coroutineId, coroutineEvents) in byCoroutine) {
             val sorted = coroutineEvents.sortedBy { it.seq }
@@ -38,10 +38,11 @@ object LifecycleValidator {
         }
 
         if (byCoroutine.isEmpty()) {
-            results += ValidationResult.Pass(
-                "LifecycleValidation",
-                "No coroutine events to validate"
-            )
+            results +=
+                ValidationResult.Pass(
+                    "LifecycleValidation",
+                    "No coroutine events to validate",
+                )
         }
 
         return results
@@ -49,7 +50,7 @@ object LifecycleValidator {
 
     private fun checkCreatedHasStarted(
         coroutineId: String,
-        events: List<CoroutineEvent>
+        events: List<CoroutineEvent>,
     ): ValidationResult {
         val ruleName = "CreatedHasStarted"
         val hasCreated = events.any { it is CoroutineCreated }
@@ -64,14 +65,14 @@ object LifecycleValidator {
                 ruleName,
                 "Coroutine $coroutineId was created but never started",
                 "CoroutineCreated found at seq=${events.first { it is CoroutineCreated }.seq} " +
-                    "but no matching CoroutineStarted exists"
+                    "but no matching CoroutineStarted exists",
             )
         }
     }
 
     private fun checkStartedHasTerminal(
         coroutineId: String,
-        events: List<CoroutineEvent>
+        events: List<CoroutineEvent>,
     ): ValidationResult {
         val ruleName = "StartedHasTerminal"
         val hasStarted = events.any { it is CoroutineStarted }
@@ -83,42 +84,43 @@ object LifecycleValidator {
             val terminalKind = events.first { it.kind in TERMINAL_KINDS }.kind
             ValidationResult.Pass(
                 ruleName,
-                "Coroutine $coroutineId: Started coroutine reached terminal state ($terminalKind)"
+                "Coroutine $coroutineId: Started coroutine reached terminal state ($terminalKind)",
             )
         } else {
             ValidationResult.Fail(
                 ruleName,
                 "Coroutine $coroutineId was started but never terminated",
                 "CoroutineStarted found but no terminal event " +
-                    "(CoroutineCompleted, CoroutineCancelled, or CoroutineFailed) exists"
+                    "(CoroutineCompleted, CoroutineCancelled, or CoroutineFailed) exists",
             )
         }
     }
 
     private fun checkNoEventsAfterTerminal(
         coroutineId: String,
-        events: List<CoroutineEvent>
+        events: List<CoroutineEvent>,
     ): ValidationResult {
         val ruleName = "NoEventsAfterTerminal"
-        val terminalEvent = events.firstOrNull { it.kind in TERMINAL_KINDS }
-            ?: return ValidationResult.Pass(
-                ruleName,
-                "Coroutine $coroutineId has no terminal event (skipped)"
-            )
+        val terminalEvent =
+            events.firstOrNull { it.kind in TERMINAL_KINDS }
+                ?: return ValidationResult.Pass(
+                    ruleName,
+                    "Coroutine $coroutineId has no terminal event (skipped)",
+                )
 
         val eventsAfterTerminal = events.filter { it.seq > terminalEvent.seq }
 
         return if (eventsAfterTerminal.isEmpty()) {
             ValidationResult.Pass(
                 ruleName,
-                "Coroutine $coroutineId: No events after terminal event (${terminalEvent.kind})"
+                "Coroutine $coroutineId: No events after terminal event (${terminalEvent.kind})",
             )
         } else {
             ValidationResult.Fail(
                 ruleName,
                 "Coroutine $coroutineId has ${eventsAfterTerminal.size} event(s) after terminal state",
                 "Terminal event ${terminalEvent.kind} at seq=${terminalEvent.seq}, " +
-                    "but found: ${eventsAfterTerminal.map { "${it.kind}@seq=${it.seq}" }}"
+                    "but found: ${eventsAfterTerminal.map { "${it.kind}@seq=${it.seq}" }}",
             )
         }
     }

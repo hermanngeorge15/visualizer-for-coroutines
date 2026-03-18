@@ -24,7 +24,7 @@ data class JobJoinRequested(
     override val parentCoroutineId: String?,
     override val scopeId: String,
     override val label: String?,
-    val waitingCoroutineId: String? = null
+    val waitingCoroutineId: String? = null,
 ) : CoroutineEvent {
     override val kind: String get() = "JobJoinRequested"
 }

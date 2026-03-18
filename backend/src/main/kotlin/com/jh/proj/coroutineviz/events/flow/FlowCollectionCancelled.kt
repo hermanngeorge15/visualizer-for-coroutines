@@ -27,7 +27,7 @@ data class FlowCollectionCancelled(
     val flowId: String,
     val collectorId: String,
     val reason: String?,
-    val emittedCount: Int
+    val emittedCount: Int,
 ) : VizEvent {
     override val kind: String get() = "FlowCollectionCancelled"
 }

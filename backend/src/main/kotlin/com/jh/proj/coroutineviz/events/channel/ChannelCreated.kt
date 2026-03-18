@@ -21,7 +21,8 @@ data class ChannelCreated(
     val channelId: String,
     val name: String? = null,
     val capacity: Int,
-    val channelType: String  // RENDEZVOUS, BUFFERED, CONFLATED, UNLIMITED
+    // RENDEZVOUS, BUFFERED, CONFLATED, UNLIMITED
+    val channelType: String,
 ) : VizEvent {
     override val kind: String get() = "ChannelCreated"
 }

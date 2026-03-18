@@ -28,7 +28,7 @@ data class ThreadAssigned(
     override val label: String?,
     val threadId: Long,
     val threadName: String,
-    val dispatcherName: String?
+    val dispatcherName: String?,
 ) : CoroutineEvent {
     override val kind: String get() = "ThreadAssigned"
 }

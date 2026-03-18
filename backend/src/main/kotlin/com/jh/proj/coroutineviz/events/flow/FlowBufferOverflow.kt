@@ -27,7 +27,8 @@ data class FlowBufferOverflow(
     val flowId: String,
     val droppedValue: String?,
     val bufferSize: Int,
-    val overflowStrategy: String  // "SUSPEND", "DROP_LATEST", "DROP_OLDEST"
+    // "SUSPEND", "DROP_LATEST", "DROP_OLDEST"
+    val overflowStrategy: String,
 ) : VizEvent {
     override val kind: String get() = "FlowBufferOverflow"
 }

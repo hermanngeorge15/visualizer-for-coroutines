@@ -29,7 +29,7 @@ data class CoroutineCancelled(
     override val parentCoroutineId: String?,
     override val scopeId: String,
     override val label: String?,
-    val cause: String?
+    val cause: String?,
 ) : CoroutineEvent {
     override val kind: String get() = "CoroutineCancelled"
 }

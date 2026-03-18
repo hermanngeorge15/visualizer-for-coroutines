@@ -1,7 +1,6 @@
 package com.jh.proj.coroutineviz.scenarios
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
 /**
  * DTOs for scenario configuration API.
@@ -10,8 +9,9 @@ import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class ActionDTO(
-    val type: String, // "delay", "throw", "log", "custom"
-    val params: Map<String, String> = emptyMap()
+    // "delay", "throw", "log", "custom"
+    val type: String,
+    val params: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -20,15 +20,16 @@ data class CoroutineConfigDTO(
     val label: String,
     val parentId: String? = null,
     val actions: List<ActionDTO> = emptyList(),
-    val children: List<CoroutineConfigDTO> = emptyList()
+    val children: List<CoroutineConfigDTO> = emptyList(),
 )
 
 @Serializable
 data class ScenarioConfigRequest(
     val name: String,
     val description: String? = null,
-    val sessionId: String? = null, // Optional - will create new session if not provided
-    val root: CoroutineConfigDTO
+    // Optional - will create new session if not provided
+    val sessionId: String? = null,
+    val root: CoroutineConfigDTO,
 )
 
 @Serializable
@@ -38,7 +39,7 @@ data class ScenarioExecutionResponse(
     val message: String,
     val coroutineCount: Int = 0,
     val eventCount: Int = 0,
-    val errors: List<String>? = null
+    val errors: List<String>? = null,
 )
 
 /**
@@ -47,9 +48,10 @@ data class ScenarioExecutionResponse(
 fun ActionDTO.toAction(): CoroutineAction {
     return when (type.lowercase()) {
         "delay" -> {
-            val duration = params["durationMs"]?.toLongOrNull() 
-                ?: params["duration"]?.toLongOrNull() 
-                ?: 1000L
+            val duration =
+                params["durationMs"]?.toLongOrNull()
+                    ?: params["duration"]?.toLongOrNull()
+                    ?: 1000L
             CoroutineAction.Delay(duration)
         }
         "throw", "exception" -> {
@@ -75,7 +77,7 @@ fun CoroutineConfigDTO.toConfig(): CoroutineConfig {
         label = label,
         parentId = parentId,
         actions = actions.map { it.toAction() },
-        children = children.map { it.toConfig() }
+        children = children.map { it.toConfig() },
     )
 }
 
@@ -83,7 +85,6 @@ fun ScenarioConfigRequest.toScenarioConfig(): ScenarioConfig {
     return ScenarioConfig(
         name = name,
         description = description,
-        root = root.toConfig()
+        root = root.toConfig(),
     )
 }
-

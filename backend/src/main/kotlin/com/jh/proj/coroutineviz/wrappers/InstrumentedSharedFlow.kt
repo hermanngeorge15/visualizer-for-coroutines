@@ -14,13 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * InstrumentedSharedFlow wraps a MutableSharedFlow to emit visualization events.
- * 
+ *
  * Features:
  * - Tracks all emissions with subscriber count
  * - Monitors subscriber lifecycle (subscribe/unsubscribe)
  * - Tracks replay cache state
  * - Handles buffer overflow scenarios
- * 
+ *
  * @param T The type of values emitted
  * @param delegate The underlying MutableSharedFlow
  * @param session The VizSession for event tracking
@@ -33,17 +33,16 @@ class InstrumentedSharedFlow<T>(
     private val session: VizSession,
     val flowId: String,
     val label: String? = null,
-    private val extraBufferCapacity: Int = 0
+    private val extraBufferCapacity: Int = 0,
 ) : MutableSharedFlow<T> {
-
     private val subscriberCount = AtomicInteger(0)
-    
+
     private val ctx: FlowEventContext by lazy {
         FlowEventContext(
             session = session,
             flowId = flowId,
             flowType = "SharedFlow",
-            label = label
+            label = label,
         )
     }
 
@@ -58,8 +57,8 @@ class InstrumentedSharedFlow<T>(
                 flowId = flowId,
                 flowType = "SharedFlow",
                 label = label,
-                scopeId = null
-            )
+                scopeId = null,
+            ),
         )
         logger.debug("SharedFlow created: flowId=$flowId, replay=${delegate.replayCache.size}, extraBuffer=$extraBufferCapacity")
     }
@@ -80,9 +79,9 @@ class InstrumentedSharedFlow<T>(
 
     override suspend fun emit(value: T) {
         val coroutineId = currentCoroutineContext()[VizCoroutineElement]?.coroutineId
-        
+
         delegate.emit(value)
-        
+
         session.send(
             SharedFlowEmission(
                 sessionId = session.sessionId,
@@ -95,23 +94,24 @@ class InstrumentedSharedFlow<T>(
                 replayCache = delegate.replayCache.size,
                 extraBufferCapacity = extraBufferCapacity,
                 coroutineId = coroutineId,
-                label = label
-            )
+                label = label,
+            ),
         )
-        
+
         logger.trace("SharedFlow emission: flowId=$flowId, value=$value, subscribers=${subscriberCount.get()}")
     }
 
     override fun tryEmit(value: T): Boolean {
         val result = delegate.tryEmit(value)
-        
+
         if (result) {
-            val coroutineId = runCatching { 
-                kotlinx.coroutines.runBlocking { 
-                    currentCoroutineContext()[VizCoroutineElement]?.coroutineId 
-                } 
-            }.getOrNull()
-            
+            val coroutineId =
+                runCatching {
+                    kotlinx.coroutines.runBlocking {
+                        currentCoroutineContext()[VizCoroutineElement]?.coroutineId
+                    }
+                }.getOrNull()
+
             session.send(
                 SharedFlowEmission(
                     sessionId = session.sessionId,
@@ -124,8 +124,8 @@ class InstrumentedSharedFlow<T>(
                     replayCache = delegate.replayCache.size,
                     extraBufferCapacity = extraBufferCapacity,
                     coroutineId = coroutineId,
-                    label = label
-                )
+                    label = label,
+                ),
             )
         } else {
             // Buffer overflow - could not emit
@@ -138,11 +138,11 @@ class InstrumentedSharedFlow<T>(
                     flowId = flowId,
                     droppedValue = value?.toString()?.take(100),
                     bufferSize = delegate.replayCache.size + extraBufferCapacity,
-                    overflowStrategy = "tryEmit_failed"
-                )
+                    overflowStrategy = "tryEmit_failed",
+                ),
             )
         }
-        
+
         return result
     }
 
@@ -162,7 +162,7 @@ class InstrumentedSharedFlow<T>(
 
         // Track subscription
         val currentSubscribers = subscriberCount.incrementAndGet()
-        
+
         session.send(
             SharedFlowSubscription(
                 sessionId = session.sessionId,
@@ -173,8 +173,8 @@ class InstrumentedSharedFlow<T>(
                 action = "subscribed",
                 subscriberCount = currentSubscribers,
                 coroutineId = coroutineId,
-                label = label
-            )
+                label = label,
+            ),
         )
 
         // Emit collection started
@@ -196,14 +196,14 @@ class InstrumentedSharedFlow<T>(
                 ctx.copy(coroutineId = coroutineId).flowCollectionCancelled(
                     collectorId = collectorId,
                     reason = e.message ?: "CancellationException",
-                    emittedCount = emissionCount
-                )
+                    emittedCount = emissionCount,
+                ),
             )
             throw e
         } finally {
             // Track unsubscription
             val remainingSubscribers = subscriberCount.decrementAndGet()
-            
+
             session.send(
                 SharedFlowSubscription(
                     sessionId = session.sessionId,
@@ -214,10 +214,10 @@ class InstrumentedSharedFlow<T>(
                     action = "unsubscribed",
                     subscriberCount = remainingSubscribers,
                     coroutineId = coroutineId,
-                    label = label
-                )
+                    label = label,
+                ),
             )
-            
+
             logger.debug("SharedFlow collector unsubscribed: flowId=$flowId, collectorId=$collectorId, subscribers=$remainingSubscribers")
         }
     }
@@ -234,7 +234,7 @@ fun <T> VizSession.vizSharedFlow(
     replay: Int = 0,
     extraBufferCapacity: Int = 0,
     onBufferOverflow: BufferOverflow = BufferOverflow.SUSPEND,
-    label: String? = null
+    label: String? = null,
 ): InstrumentedSharedFlow<T> {
     val flowId = "sharedflow-${nextSeq()}"
     return InstrumentedSharedFlow(
@@ -242,7 +242,7 @@ fun <T> VizSession.vizSharedFlow(
         session = this,
         flowId = flowId,
         label = label,
-        extraBufferCapacity = extraBufferCapacity
+        extraBufferCapacity = extraBufferCapacity,
     )
 }
 
@@ -252,7 +252,7 @@ fun <T> VizSession.vizSharedFlow(
 fun <T> MutableSharedFlow<T>.instrumented(
     session: VizSession,
     label: String? = null,
-    extraBufferCapacity: Int = 0
+    extraBufferCapacity: Int = 0,
 ): InstrumentedSharedFlow<T> {
     val flowId = "sharedflow-${session.nextSeq()}"
     return InstrumentedSharedFlow(
@@ -260,7 +260,6 @@ fun <T> MutableSharedFlow<T>.instrumented(
         session = session,
         flowId = flowId,
         label = label,
-        extraBufferCapacity = extraBufferCapacity
+        extraBufferCapacity = extraBufferCapacity,
     )
 }
-

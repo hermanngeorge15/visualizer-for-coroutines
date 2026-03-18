@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ScenarioResponse(
     val success: Boolean,
-    val message: String
+    val message: String,
 )
 
 @Serializable
@@ -15,7 +15,7 @@ data class ScenarioCompletionResponse(
     val sessionId: String,
     val message: String,
     val coroutineCount: Int,
-    val eventCount: Int
+    val eventCount: Int,
 )
 
 @Serializable
@@ -24,7 +24,7 @@ data class ScenarioResultData(
     val sessionId: String,
     val events: List<VizEvent>,
     val coroutines: List<CoroutineNodeDto>,
-    val eventCount: Int
+    val eventCount: Int,
 )
 
 @Serializable
@@ -32,7 +32,7 @@ data class SessionSnapshotResponse(
     val sessionId: String,
     val coroutineCount: Int,
     val eventCount: Int,
-    val coroutines: List<CoroutineNodeDto>
+    val coroutines: List<CoroutineNodeDto>,
 )
 
 @Serializable
@@ -42,6 +42,5 @@ data class CoroutineNodeDto(
     val parentId: String?,
     val scopeId: String,
     val label: String?,
-    val state: String
+    val state: String,
 )
-

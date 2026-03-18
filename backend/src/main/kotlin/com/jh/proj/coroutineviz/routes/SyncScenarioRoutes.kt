@@ -2,13 +2,11 @@ package com.jh.proj.coroutineviz.routes
 
 import com.jh.proj.coroutineviz.scenarios.SyncScenarios
 import com.jh.proj.coroutineviz.session.SessionManager
-import com.jh.proj.coroutineviz.session.VizSession
 import com.jh.proj.coroutineviz.wrappers.VizScope
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Job
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 
@@ -20,21 +18,20 @@ data class SyncScenarioResponse(
     val sessionId: String,
     val scenario: String,
     val message: String,
-    val eventCount: Int = 0
+    val eventCount: Int = 0,
 )
 
 /**
  * Routes for synchronization primitive demonstration scenarios.
- * 
+ *
  * These routes demonstrate real-world uses of Mutex and Semaphore
  * with full event visualization.
  */
 fun Route.registerSyncScenarioRoutes() {
-    
     // ========================================================================
     // MUTEX SCENARIOS
     // ========================================================================
-    
+
     /**
      * Thread-safe counter using Mutex
      */
@@ -43,7 +40,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.threadSafeCounter(scope)
         }
     }
-    
+
     /**
      * Bank account transfer with consistent lock ordering
      */
@@ -52,7 +49,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.bankAccountTransfer(scope)
         }
     }
-    
+
     /**
      * Cache with thread-safe read-through pattern
      */
@@ -61,7 +58,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.cacheWithReadThrough(scope)
         }
     }
-    
+
     /**
      * Deadlock demonstration (intentional)
      */
@@ -70,11 +67,11 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.deadlockDemonstration(scope)
         }
     }
-    
+
     // ========================================================================
     // SEMAPHORE SCENARIOS
     // ========================================================================
-    
+
     /**
      * Database connection pool limiting
      */
@@ -83,7 +80,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.databaseConnectionPool(scope)
         }
     }
-    
+
     /**
      * API rate limiter
      */
@@ -92,7 +89,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.apiRateLimiter(scope)
         }
     }
-    
+
     /**
      * Parallel file processor with I/O throttling
      */
@@ -101,7 +98,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.parallelFileProcessor(scope)
         }
     }
-    
+
     /**
      * Resource pool with timeout handling
      */
@@ -110,7 +107,7 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.resourcePoolWithTimeout(scope)
         }
     }
-    
+
     /**
      * Producer-Consumer with bounded buffer
      */
@@ -119,11 +116,11 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.producerConsumerBuffer(scope)
         }
     }
-    
+
     // ========================================================================
     // COMBINED SCENARIOS
     // ========================================================================
-    
+
     /**
      * E-commerce order processing (Mutex + Semaphore)
      */
@@ -132,11 +129,11 @@ fun Route.registerSyncScenarioRoutes() {
             SyncScenarios.ecommerceOrderProcessing(scope)
         }
     }
-    
+
     // ========================================================================
     // LIST ALL SCENARIOS
     // ========================================================================
-    
+
     get("/api/sync/scenarios") {
         call.respond(
             HttpStatusCode.OK,
@@ -150,8 +147,8 @@ fun Route.registerSyncScenarioRoutes() {
                 ScenarioInfo("semaphore/file-processor", "File Processor", "Semaphore", "I/O-limited parallel file processing"),
                 ScenarioInfo("semaphore/resource-timeout", "Resource Timeout", "Semaphore", "Resource acquisition with timeout"),
                 ScenarioInfo("semaphore/producer-consumer", "Producer-Consumer", "Semaphore", "Bounded buffer implementation"),
-                ScenarioInfo("combined/ecommerce", "E-commerce Orders", "Combined", "Order processing with inventory and payment")
-            )
+                ScenarioInfo("combined/ecommerce", "E-commerce Orders", "Combined", "Order processing with inventory and payment"),
+            ),
         )
     }
 }
@@ -161,7 +158,7 @@ data class ScenarioInfo(
     val path: String,
     val name: String,
     val type: String,
-    val description: String
+    val description: String,
 )
 
 /**
@@ -169,30 +166,30 @@ data class ScenarioInfo(
  */
 private suspend fun ApplicationCall.runSyncScenario(
     scenarioName: String,
-    scenario: suspend (VizScope) -> Unit
+    scenario: suspend (VizScope) -> Unit,
 ) {
     logger.info("┌─────────────────────────────────────────┐")
     logger.info("│  Running Sync Scenario                  │")
     logger.info("│  Scenario: $scenarioName".padEnd(42) + "│")
     logger.info("└─────────────────────────────────────────┘")
-    
+
     try {
         // Create session
         val session = SessionManager.createSession("sync-${scenarioName.lowercase().replace(" ", "-")}")
-        
+
         // Create VizScope
         val scope = VizScope(session)
-        
+
         // Run the scenario
         scenario(scope)
-        
+
         // Wait for any pending events
         kotlinx.coroutines.delay(100)
-        
+
         val eventCount = session.store.all().size
-        
+
         logger.info("✅ Sync scenario '$scenarioName' completed | Events: $eventCount")
-        
+
         respond(
             HttpStatusCode.OK,
             SyncScenarioResponse(
@@ -200,8 +197,8 @@ private suspend fun ApplicationCall.runSyncScenario(
                 sessionId = session.sessionId,
                 scenario = scenarioName,
                 message = "Scenario completed successfully",
-                eventCount = eventCount
-            )
+                eventCount = eventCount,
+            ),
         )
     } catch (e: Exception) {
         logger.error("❌ Sync scenario '$scenarioName' failed", e)
@@ -211,9 +208,8 @@ private suspend fun ApplicationCall.runSyncScenario(
                 success = false,
                 sessionId = "",
                 scenario = scenarioName,
-                message = "Scenario failed: ${e.message}"
-            )
+                message = "Scenario failed: ${e.message}",
+            ),
         )
     }
 }
-

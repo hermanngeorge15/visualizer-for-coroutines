@@ -5,19 +5,21 @@ import kotlinx.coroutines.Job
 
 /**
  * DSL for building dynamic coroutine scenarios from configuration.
- * 
+ *
  * This allows creating complex coroutine hierarchies with delays, exceptions,
  * and custom actions based on JSON/data configuration from the frontend.
- */
-
-/**
- * Action types that can be performed in a coroutine
+ *
+ * Action types that can be performed in a coroutine:
  */
 sealed class CoroutineAction {
     data class Delay(val durationMs: Long) : CoroutineAction()
+
     data class ThrowException(val exceptionType: String, val message: String) : CoroutineAction()
+
     data class Log(val message: String) : CoroutineAction()
-    data class CustomCode(val code: String) : CoroutineAction() // For future extension
+
+    // For future extension
+    data class CustomCode(val code: String) : CoroutineAction()
 }
 
 /**
@@ -28,7 +30,7 @@ data class CoroutineConfig(
     val label: String,
     val parentId: String? = null,
     val actions: List<CoroutineAction> = emptyList(),
-    val children: List<CoroutineConfig> = emptyList()
+    val children: List<CoroutineConfig> = emptyList(),
 )
 
 /**
@@ -37,7 +39,7 @@ data class CoroutineConfig(
 data class ScenarioConfig(
     val name: String,
     val description: String? = null,
-    val root: CoroutineConfig
+    val root: CoroutineConfig,
 )
 
 /**
@@ -49,7 +51,7 @@ annotation class ScenarioDslMarker
 @ScenarioDslMarker
 class CoroutineBuilder(
     var id: String = "",
-    var label: String = ""
+    var label: String = "",
 ) {
     private val actions = mutableListOf<CoroutineAction>()
     private val children = mutableListOf<CoroutineConfig>()
@@ -58,7 +60,10 @@ class CoroutineBuilder(
         actions.add(CoroutineAction.Delay(durationMs))
     }
 
-    fun throwException(type: String = "RuntimeException", message: String = "Test exception") {
+    fun throwException(
+        type: String = "RuntimeException",
+        message: String = "Test exception",
+    ) {
         actions.add(CoroutineAction.ThrowException(type, message))
     }
 
@@ -66,7 +71,11 @@ class CoroutineBuilder(
         actions.add(CoroutineAction.Log(message))
     }
 
-    fun child(id: String, label: String, block: CoroutineBuilder.() -> Unit) {
+    fun child(
+        id: String,
+        label: String,
+        block: CoroutineBuilder.() -> Unit,
+    ) {
         val builder = CoroutineBuilder(id, label)
         builder.block()
         children.add(builder.build(id))
@@ -78,7 +87,7 @@ class CoroutineBuilder(
             label = label,
             parentId = parentId,
             actions = actions.toList(),
-            children = children.toList()
+            children = children.toList(),
         )
     }
 }
@@ -86,11 +95,15 @@ class CoroutineBuilder(
 @ScenarioDslMarker
 class ScenarioBuilder(
     var name: String = "",
-    var description: String? = null
+    var description: String? = null,
 ) {
     private var rootConfig: CoroutineConfig? = null
 
-    fun root(id: String, label: String, block: CoroutineBuilder.() -> Unit) {
+    fun root(
+        id: String,
+        label: String,
+        block: CoroutineBuilder.() -> Unit,
+    ) {
         val builder = CoroutineBuilder(id, label)
         builder.block()
         rootConfig = builder.build()
@@ -100,7 +113,7 @@ class ScenarioBuilder(
         return ScenarioConfig(
             name = name,
             description = description,
-            root = rootConfig ?: throw IllegalStateException("Root coroutine not defined")
+            root = rootConfig ?: throw IllegalStateException("Root coroutine not defined"),
         )
     }
 }
@@ -108,7 +121,10 @@ class ScenarioBuilder(
 /**
  * DSL entry point for creating scenarios
  */
-fun scenario(name: String, block: ScenarioBuilder.() -> Unit): ScenarioConfig {
+fun scenario(
+    name: String,
+    block: ScenarioBuilder.() -> Unit,
+): ScenarioConfig {
     val builder = ScenarioBuilder(name = name)
     builder.block()
     return builder.build()
@@ -144,7 +160,10 @@ suspend fun VizScope.executeCoroutineConfig(config: CoroutineConfig): Job {
 /**
  * Create an exception instance from a string type
  */
-private fun createException(type: String, message: String): Exception {
+private fun createException(
+    type: String,
+    message: String,
+): Exception {
     return when (type.lowercase()) {
         "illegalstateexception", "illegalstate" -> IllegalStateException(message)
         "illegalargumentexception", "illegalargument" -> IllegalArgumentException(message)
@@ -154,4 +173,3 @@ private fun createException(type: String, message: String): Exception {
         else -> RuntimeException(message)
     }
 }
-

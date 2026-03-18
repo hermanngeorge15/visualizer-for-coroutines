@@ -6,6 +6,14 @@ plugins {
     kotlin("jvm") version "2.2.20"
     id("io.ktor.plugin") version "3.3.2"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
+    id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.7"
+}
+
+detekt {
+    config.setFrom(files("detekt.yml"))
+    buildUponDefaultConfig = true
+    baseline = file("detekt-baseline.xml")
 }
 
 group = "com.jh.proj"
@@ -32,7 +40,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("io.ktor:ktor-client-content-negotiation")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-    
+
     // JUnit 5 (Jupiter) for new dispatcher tests
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

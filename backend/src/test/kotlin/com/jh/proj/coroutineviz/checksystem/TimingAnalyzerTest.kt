@@ -7,8 +7,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class TimingAnalyzerTest {
-
-    private fun created(coroutineId: String, seq: Long, tsNanos: Long): CoroutineCreated =
+    private fun created(
+        coroutineId: String,
+        seq: Long,
+        tsNanos: Long,
+    ): CoroutineCreated =
         CoroutineCreated(
             sessionId = "test-session",
             seq = seq,
@@ -17,10 +20,14 @@ class TimingAnalyzerTest {
             jobId = "job-$coroutineId",
             parentCoroutineId = null,
             scopeId = "scope-1",
-            label = null
+            label = null,
         )
 
-    private fun started(coroutineId: String, seq: Long, tsNanos: Long): CoroutineStarted =
+    private fun started(
+        coroutineId: String,
+        seq: Long,
+        tsNanos: Long,
+    ): CoroutineStarted =
         CoroutineStarted(
             sessionId = "test-session",
             seq = seq,
@@ -29,10 +36,14 @@ class TimingAnalyzerTest {
             jobId = "job-$coroutineId",
             parentCoroutineId = null,
             scopeId = "scope-1",
-            label = null
+            label = null,
         )
 
-    private fun suspended(coroutineId: String, seq: Long, tsNanos: Long): CoroutineSuspended =
+    private fun suspended(
+        coroutineId: String,
+        seq: Long,
+        tsNanos: Long,
+    ): CoroutineSuspended =
         CoroutineSuspended(
             sessionId = "test-session",
             seq = seq,
@@ -42,10 +53,14 @@ class TimingAnalyzerTest {
             parentCoroutineId = null,
             scopeId = "scope-1",
             label = null,
-            reason = "delay"
+            reason = "delay",
         )
 
-    private fun resumed(coroutineId: String, seq: Long, tsNanos: Long): CoroutineResumed =
+    private fun resumed(
+        coroutineId: String,
+        seq: Long,
+        tsNanos: Long,
+    ): CoroutineResumed =
         CoroutineResumed(
             sessionId = "test-session",
             seq = seq,
@@ -54,10 +69,14 @@ class TimingAnalyzerTest {
             jobId = "job-$coroutineId",
             parentCoroutineId = null,
             scopeId = "scope-1",
-            label = null
+            label = null,
         )
 
-    private fun completed(coroutineId: String, seq: Long, tsNanos: Long): CoroutineCompleted =
+    private fun completed(
+        coroutineId: String,
+        seq: Long,
+        tsNanos: Long,
+    ): CoroutineCompleted =
         CoroutineCompleted(
             sessionId = "test-session",
             seq = seq,
@@ -66,16 +85,17 @@ class TimingAnalyzerTest {
             jobId = "job-$coroutineId",
             parentCoroutineId = null,
             scopeId = "scope-1",
-            label = null
+            label = null,
         )
 
     @Test
     fun `duration calculation correct`() {
-        val events: List<VizEvent> = listOf(
-            created("c1", 1, tsNanos = 1000),
-            started("c1", 2, tsNanos = 2000),
-            completed("c1", 3, tsNanos = 5000)
-        )
+        val events: List<VizEvent> =
+            listOf(
+                created("c1", 1, tsNanos = 1000),
+                started("c1", 2, tsNanos = 2000),
+                completed("c1", 3, tsNanos = 5000),
+            )
 
         val report = TimingAnalyzer.analyze(events)
 
@@ -85,15 +105,18 @@ class TimingAnalyzerTest {
 
     @Test
     fun `suspension durations tracked`() {
-        val events: List<VizEvent> = listOf(
-            created("c1", 1, tsNanos = 1000),
-            started("c1", 2, tsNanos = 2000),
-            suspended("c1", 3, tsNanos = 3000),
-            resumed("c1", 4, tsNanos = 5000),  // 2000ns suspension
-            suspended("c1", 5, tsNanos = 6000),
-            resumed("c1", 6, tsNanos = 9000),  // 3000ns suspension
-            completed("c1", 7, tsNanos = 10000)
-        )
+        val events: List<VizEvent> =
+            listOf(
+                created("c1", 1, tsNanos = 1000),
+                started("c1", 2, tsNanos = 2000),
+                suspended("c1", 3, tsNanos = 3000),
+                // 2000ns suspension
+                resumed("c1", 4, tsNanos = 5000),
+                suspended("c1", 5, tsNanos = 6000),
+                // 3000ns suspension
+                resumed("c1", 6, tsNanos = 9000),
+                completed("c1", 7, tsNanos = 10000),
+            )
 
         val report = TimingAnalyzer.analyze(events)
 
@@ -105,14 +128,15 @@ class TimingAnalyzerTest {
 
     @Test
     fun `report includes all coroutines`() {
-        val events: List<VizEvent> = listOf(
-            created("c1", 1, tsNanos = 1000),
-            started("c1", 2, tsNanos = 2000),
-            created("c2", 3, tsNanos = 3000),
-            started("c2", 4, tsNanos = 4000),
-            completed("c1", 5, tsNanos = 5000),
-            completed("c2", 6, tsNanos = 8000)
-        )
+        val events: List<VizEvent> =
+            listOf(
+                created("c1", 1, tsNanos = 1000),
+                started("c1", 2, tsNanos = 2000),
+                created("c2", 3, tsNanos = 3000),
+                started("c2", 4, tsNanos = 4000),
+                completed("c1", 5, tsNanos = 5000),
+                completed("c2", 6, tsNanos = 8000),
+            )
 
         val report = TimingAnalyzer.analyze(events)
 

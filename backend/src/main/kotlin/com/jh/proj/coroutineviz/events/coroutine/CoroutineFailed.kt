@@ -30,7 +30,7 @@ data class CoroutineFailed(
     override val label: String?,
     val exceptionType: String?,
     val message: String?,
-    val stackTrace: List<String>
+    val stackTrace: List<String>,
 ) : CoroutineEvent {
     override val kind: String get() = "CoroutineFailed"
 }

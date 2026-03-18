@@ -27,7 +27,7 @@ data class MutexCreated(
     override val tsNanos: Long,
     override val mutexId: String,
     override val mutexLabel: String?,
-    val ownerCoroutineId: String? = null
+    val ownerCoroutineId: String? = null,
 ) : MutexEvent {
     override val kind: String get() = "MutexCreated"
 }
@@ -45,8 +45,10 @@ data class MutexLockRequested(
     override val mutexLabel: String?,
     val requesterId: String,
     val requesterLabel: String?,
-    val isLocked: Boolean,           // Current state when requested
-    val queuePosition: Int           // Position in wait queue (0 if acquired immediately)
+    // Current state when requested
+    val isLocked: Boolean,
+    // Position in wait queue (0 if acquired immediately)
+    val queuePosition: Int,
 ) : MutexEvent {
     override val kind: String get() = "MutexLockRequested"
 }
@@ -64,7 +66,8 @@ data class MutexLockAcquired(
     override val mutexLabel: String?,
     val acquirerId: String,
     val acquirerLabel: String?,
-    val waitDurationNanos: Long      // How long waited for lock
+    // How long waited for lock
+    val waitDurationNanos: Long,
 ) : MutexEvent {
     override val kind: String get() = "MutexLockAcquired"
 }
@@ -82,8 +85,10 @@ data class MutexUnlocked(
     override val mutexLabel: String?,
     val releaserId: String,
     val releaserLabel: String?,
-    val nextWaiterId: String?,       // Who gets the lock next
-    val holdDurationNanos: Long      // How long lock was held
+    // Who gets the lock next
+    val nextWaiterId: String?,
+    // How long lock was held
+    val holdDurationNanos: Long,
 ) : MutexEvent {
     override val kind: String get() = "MutexUnlocked"
 }
@@ -101,7 +106,8 @@ data class MutexTryLockFailed(
     override val mutexLabel: String?,
     val requesterId: String,
     val requesterLabel: String?,
-    val currentOwnerId: String?      // Who currently holds the lock
+    // Who currently holds the lock
+    val currentOwnerId: String?,
 ) : MutexEvent {
     override val kind: String get() = "MutexTryLockFailed"
 }
@@ -118,8 +124,7 @@ data class MutexQueueChanged(
     override val mutexId: String,
     override val mutexLabel: String?,
     val waitingCoroutineIds: List<String>,
-    val waitingLabels: List<String?>
+    val waitingLabels: List<String?>,
 ) : MutexEvent {
     override val kind: String get() = "MutexQueueChanged"
 }
-

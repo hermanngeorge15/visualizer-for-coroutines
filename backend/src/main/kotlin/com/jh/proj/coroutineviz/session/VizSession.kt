@@ -1,8 +1,8 @@
 package com.jh.proj.coroutineviz.session
 
 import com.jh.proj.coroutineviz.events.CoroutineEvent
-import com.jh.proj.coroutineviz.events.job.JobStateChanged
 import com.jh.proj.coroutineviz.events.VizEvent
+import com.jh.proj.coroutineviz.events.job.JobStateChanged
 import com.jh.proj.coroutineviz.models.RuntimeSnapshot
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -31,13 +31,15 @@ import java.util.concurrent.atomic.AtomicLong
  * @property sessionId Unique identifier for this session
  */
 class VizSession(
-    val sessionId: String
+    val sessionId: String,
 ) {
     // Session-scoped coroutine scope for async operations
     val sessionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     val eventBus = EventBus()
-    val bus = eventBus  // Alias for backwards compatibility
+
+    // Alias for backwards compatibility
+    val bus = eventBus
     val store = EventStore()
     val snapshot = RuntimeSnapshot()
     val jobMonitor = JobStatusMonitor(session = this, 100)
@@ -103,16 +105,17 @@ class VizSession(
         return eventBus.stream()
             .filterIsInstance<CoroutineEvent>()
             .filter { event ->
-                event.kind in setOf(
-                    "CoroutineCreated",
-                    "CoroutineStarted",
-                    "CoroutineSuspended",
-                    "CoroutineResumed",
-                    "CoroutineCompleted",
-                    "CoroutineCancelled",
-                    "CoroutineFailed",
-                    "CoroutineBodyCompleted"
-                )
+                event.kind in
+                    setOf(
+                        "CoroutineCreated",
+                        "CoroutineStarted",
+                        "CoroutineSuspended",
+                        "CoroutineResumed",
+                        "CoroutineCompleted",
+                        "CoroutineCancelled",
+                        "CoroutineFailed",
+                        "CoroutineBodyCompleted",
+                    )
             }
     }
 
@@ -128,12 +131,10 @@ class VizSession(
      * Get merged flow of coroutine lifecycle + job state events,
      * sorted by timestamp (newest first)
      */
-    fun mergedTimelineFlow(
-        newestFirst: Boolean = true
-    ): Flow<VizEvent> {
+    fun mergedTimelineFlow(newestFirst: Boolean = true): Flow<VizEvent> {
         return merge(
             coroutineLifecycleFlow(),
-            jobStateFlow()
+            jobStateFlow(),
         ).let { flow ->
             if (newestFirst) {
                 // For real-time streams, events are already time-ordered
@@ -159,7 +160,7 @@ class VizSession(
                 CorrelatedEventPair(
                     coroutineEvent = coroutineEvent,
                     jobEvent = jobEvent,
-                    timeDelta = coroutineEvent.tsNanos - jobEvent.tsNanos
+                    timeDelta = coroutineEvent.tsNanos - jobEvent.tsNanos,
                 )
             } else {
                 null
@@ -173,20 +174,21 @@ class VizSession(
      */
     fun getCoroutineTimeline(
         coroutineId: String,
-        newestFirst: Boolean = true
+        newestFirst: Boolean = true,
     ): List<VizEvent> {
         val allEvents = store.all()
 
-        val filtered = allEvents.filter { event ->
-            when (event) {
-                is CoroutineEvent -> event.coroutineId == coroutineId
-                is JobStateChanged -> {
-                    // Find if this job belongs to our coroutine
-                    snapshot.coroutines[coroutineId]?.jobId == event.jobId
+        val filtered =
+            allEvents.filter { event ->
+                when (event) {
+                    is CoroutineEvent -> event.coroutineId == coroutineId
+                    is JobStateChanged -> {
+                        // Find if this job belongs to our coroutine
+                        snapshot.coroutines[coroutineId]?.jobId == event.jobId
+                    }
+                    else -> false
                 }
-                else -> false
             }
-        }
 
         return if (newestFirst) {
             filtered.sortedByDescending { it.tsNanos }
@@ -200,39 +202,44 @@ class VizSession(
      */
     fun getSplitTimeline(
         coroutineId: String,
-        newestFirst: Boolean = true
+        newestFirst: Boolean = true,
     ): SplitTimeline {
         val allEvents = store.all()
 
-        val coroutineEvents = allEvents
-            .filterIsInstance<CoroutineEvent>()
-            .filter { it.coroutineId == coroutineId }
+        val coroutineEvents =
+            allEvents
+                .filterIsInstance<CoroutineEvent>()
+                .filter { it.coroutineId == coroutineId }
 
         val jobId = snapshot.coroutines[coroutineId]?.jobId
-        val jobEvents = if (jobId != null) {
-            allEvents
-                .filterIsInstance<JobStateChanged>()
-                .filter { it.jobId == jobId }
-        } else {
-            emptyList()
-        }
+        val jobEvents =
+            if (jobId != null) {
+                allEvents
+                    .filterIsInstance<JobStateChanged>()
+                    .filter { it.jobId == jobId }
+            } else {
+                emptyList()
+            }
 
         return SplitTimeline(
-            coroutineEvents = if (newestFirst) {
-                coroutineEvents.sortedByDescending { it.tsNanos }
-            } else {
-                coroutineEvents.sortedBy { it.tsNanos }
-            },
-            jobEvents = if (newestFirst) {
-                jobEvents.sortedByDescending { it.tsNanos }
-            } else {
-                jobEvents.sortedBy { it.tsNanos }
-            },
-            merged = if (newestFirst) {
-                (coroutineEvents + jobEvents).sortedByDescending { it.tsNanos }
-            } else {
-                (coroutineEvents + jobEvents).sortedBy { it.tsNanos }
-            }
+            coroutineEvents =
+                if (newestFirst) {
+                    coroutineEvents.sortedByDescending { it.tsNanos }
+                } else {
+                    coroutineEvents.sortedBy { it.tsNanos }
+                },
+            jobEvents =
+                if (newestFirst) {
+                    jobEvents.sortedByDescending { it.tsNanos }
+                } else {
+                    jobEvents.sortedBy { it.tsNanos }
+                },
+            merged =
+                if (newestFirst) {
+                    (coroutineEvents + jobEvents).sortedByDescending { it.tsNanos }
+                } else {
+                    (coroutineEvents + jobEvents).sortedBy { it.tsNanos }
+                },
         )
     }
 }
@@ -241,12 +248,13 @@ class VizSession(
 data class CorrelatedEventPair(
     val coroutineEvent: CoroutineEvent,
     val jobEvent: JobStateChanged,
-    val timeDelta: Long  // coroutineEvent.tsNanos - jobEvent.tsNanos
+    // coroutineEvent.tsNanos - jobEvent.tsNanos
+    val timeDelta: Long,
 )
 
 data class SplitTimeline(
     val coroutineEvents: List<CoroutineEvent>,
     val jobEvents: List<JobStateChanged>,
-    val merged: List<VizEvent>  // Both types merged and sorted
+    // Both types merged and sorted
+    val merged: List<VizEvent>,
 )
-

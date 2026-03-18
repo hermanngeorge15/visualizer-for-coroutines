@@ -10,26 +10,31 @@ class JobStatusMonitor(
     private val session: VizSession,
     private val poolingIntervalMs: Long = 30L,
 ) {
-
     private val trackedJobs = ConcurrentHashMap<String, TrackedJob>()
     private var monitorJob: Job? = null
 
-    fun track(job: Job, jobId: String, coroutineId: String) {
-        trackedJobs[coroutineId] = TrackedJob(
-            coroutineId = coroutineId,
-            jobId = jobId,
-            job = job,
-            lastChildrenCount = job.children.count()
-        )
+    fun track(
+        job: Job,
+        jobId: String,
+        coroutineId: String,
+    ) {
+        trackedJobs[coroutineId] =
+            TrackedJob(
+                coroutineId = coroutineId,
+                jobId = jobId,
+                job = job,
+                lastChildrenCount = job.children.count(),
+            )
     }
 
-    fun start(){
-        monitorJob = session.sessionScope.launch {
-            while(isActive){
-                delay(poolingIntervalMs)
-                pollAllJobs()
+    fun start() {
+        monitorJob =
+            session.sessionScope.launch {
+                while (isActive) {
+                    delay(poolingIntervalMs)
+                    pollAllJobs()
+                }
             }
-        }
     }
 
     private fun pollAllJobs() {
@@ -37,21 +42,25 @@ class JobStatusMonitor(
             val currentChildrenCount = tracked.job.children.count()
             // Only emit if children count changed
             if (currentChildrenCount != tracked.lastChildrenCount) {
-                val ctx = EventContext(
-                    session = session,
-                    coroutineId = tracked.coroutineId,
-                    jobId = tracked.jobId,
-                    parentCoroutineId = null,  // Could enhance this
-                    scopeId = "unknown",
-                    label = null
-                )
+                val ctx =
+                    EventContext(
+                        session = session,
+                        coroutineId = tracked.coroutineId,
+                        jobId = tracked.jobId,
+                        // Could enhance this
+                        parentCoroutineId = null,
+                        scopeId = "unknown",
+                        label = null,
+                    )
 
-                session.send(ctx.jobStateChanged(
-                    isActive = tracked.job.isActive,
-                    isCompleted = tracked.job.isCompleted,
-                    isCancelled = tracked.job.isCancelled,
-                    childrenCount = currentChildrenCount
-                ))
+                session.send(
+                    ctx.jobStateChanged(
+                        isActive = tracked.job.isActive,
+                        isCompleted = tracked.job.isCompleted,
+                        isCancelled = tracked.job.isCancelled,
+                        childrenCount = currentChildrenCount,
+                    ),
+                )
 
                 tracked.lastChildrenCount = currentChildrenCount
             }
@@ -66,7 +75,6 @@ class JobStatusMonitor(
     fun stop() {
         monitorJob?.cancel()
     }
-
 
     private data class TrackedJob(
         val coroutineId: String,

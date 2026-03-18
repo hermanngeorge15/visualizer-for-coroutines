@@ -13,12 +13,15 @@ data class FlowOperatorApplied(
     override val seq: Long,
     override val tsNanos: Long,
     val flowId: String,
-    val sourceFlowId: String,  // The upstream flow this operator transforms
-    val operatorName: String,  // "map", "filter", "transform", "flatMapConcat", etc.
-    val operatorIndex: Int,    // Position in operator chain (0 = first operator)
+    // The upstream flow this operator transforms
+    val sourceFlowId: String,
+    // "map", "filter", "transform", "flatMapConcat", etc.
+    val operatorName: String,
+    // Position in operator chain (0 = first operator)
+    val operatorIndex: Int,
     val label: String? = null,
-    val coroutineId: String? = null  // If created within a coroutine context
+    // If created within a coroutine context
+    val coroutineId: String? = null,
 ) : VizEvent {
     override val kind = "FlowOperatorApplied"
 }
-

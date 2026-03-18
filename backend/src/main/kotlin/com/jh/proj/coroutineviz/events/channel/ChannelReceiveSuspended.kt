@@ -17,7 +17,7 @@ data class ChannelReceiveSuspended(
     override val seq: Long,
     override val tsNanos: Long,
     val channelId: String,
-    val coroutineId: String
+    val coroutineId: String,
 ) : VizEvent {
     override val kind: String get() = "ChannelReceiveSuspended"
 }

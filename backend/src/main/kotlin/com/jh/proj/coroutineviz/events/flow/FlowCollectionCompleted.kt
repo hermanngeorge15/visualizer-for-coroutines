@@ -27,7 +27,7 @@ data class FlowCollectionCompleted(
     val flowId: String,
     val collectorId: String,
     val totalEmissions: Int,
-    val durationNanos: Long
+    val durationNanos: Long,
 ) : VizEvent {
     override val kind: String get() = "FlowCollectionCompleted"
 }

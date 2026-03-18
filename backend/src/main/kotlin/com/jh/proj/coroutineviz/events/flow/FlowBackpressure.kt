@@ -14,12 +14,13 @@ data class FlowBackpressure(
     override val tsNanos: Long,
     val flowId: String,
     val collectorId: String,
-    val reason: String,  // "slow_collector", "buffer_full", "conflated"
+    // "slow_collector", "buffer_full", "conflated"
+    val reason: String,
     val pendingEmissions: Int,
     val bufferCapacity: Int?,
-    val durationNanos: Long?,  // How long producer waited
-    val coroutineId: String? = null
+    // How long producer waited
+    val durationNanos: Long?,
+    val coroutineId: String? = null,
 ) : VizEvent {
     override val kind = "FlowBackpressure"
 }
-

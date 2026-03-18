@@ -19,7 +19,10 @@ class RuntimeSnapshot {
     val coroutines: MutableMap<String, CoroutineNode> = mutableMapOf()
     private val jobToCoroutineId = ConcurrentHashMap<Job, String>()
 
-    fun registerJob(job: Job, coroutineId: String) {
+    fun registerJob(
+        job: Job,
+        coroutineId: String,
+    ) {
         jobToCoroutineId[job] = coroutineId
     }
 

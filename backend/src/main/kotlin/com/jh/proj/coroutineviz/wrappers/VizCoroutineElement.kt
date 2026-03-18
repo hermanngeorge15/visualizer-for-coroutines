@@ -28,9 +28,8 @@ data class VizCoroutineElement(
     val jobId: String,
     val parentCoroutineId: String?,
     val scopeId: String,
-    val label: String?
+    val label: String?,
 ) : CoroutineContext.Element {
-
     companion object Key : CoroutineContext.Key<VizCoroutineElement>
 
     override val key: CoroutineContext.Key<*> = Key
