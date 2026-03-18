@@ -13,8 +13,11 @@ import java.util.concurrent.ConcurrentHashMap
  * - Run scenarios in that session
  * - Stream events from that session via SSE
  * - Query the session snapshot
+ *
+ * Implements [SessionStoreInterface] so callers can depend on the abstraction
+ * rather than this concrete singleton.
  */
-object SessionManager {
+object SessionManager : SessionStoreInterface {
     private val logger = LoggerFactory.getLogger(SessionManager::class.java)
     private val sessions = ConcurrentHashMap<String, VizSession>()
 
@@ -36,8 +39,12 @@ object SessionManager {
 
     /**
      * Create a new visualization session.
+     *
+     * Satisfies the [SessionStoreInterface.createSession] contract.
+     * The suspend modifier is accepted but this implementation does not
+     * actually suspend — it completes synchronously.
      */
-    fun createSession(name: String? = null): VizSession {
+    override suspend fun createSession(name: String?): VizSession {
         val sessionId =
             name?.let { "$it-${System.currentTimeMillis()}" }
                 ?: "session-${System.currentTimeMillis()}"
@@ -53,14 +60,14 @@ object SessionManager {
     /**
      * Get an existing session by ID.
      */
-    fun getSession(sessionId: String): VizSession? {
+    override fun getSession(sessionId: String): VizSession? {
         return sessions[sessionId]
     }
 
     /**
      * List all active sessions.
      */
-    fun listSessions(): List<SessionInfo> {
+    override fun listSessions(): List<SessionInfo> {
         return sessions.values.map { session ->
             SessionInfo(
                 sessionId = session.sessionId,
@@ -72,8 +79,17 @@ object SessionManager {
 
     /**
      * Close and remove a session.
+     * Retained for backwards compatibility — delegates to [deleteSession].
      */
-    fun closeSession(sessionId: String): Boolean {
+    fun closeSession(sessionId: String): Boolean = deleteSession(sessionId)
+
+    /**
+     * Delete (close and remove) a session by ID.
+     *
+     * Cleans up session resources before removal. Satisfies the
+     * [SessionStoreInterface.deleteSession] contract.
+     */
+    override fun deleteSession(sessionId: String): Boolean {
         val removed = sessions.remove(sessionId)
         if (removed != null) {
             removed.close() // Clean up session resources
@@ -87,7 +103,7 @@ object SessionManager {
     /**
      * Clear all sessions (useful for testing).
      */
-    fun clearAll() {
+    override fun clearAll() {
         val count = sessions.size
         sessions.clear()
         logger.info("Cleared all sessions: $count removed")
