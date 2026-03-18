@@ -1,0 +1,26 @@
+<configuration>
+    <!-- Production JSON logging via Logstash encoder -->
+    <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>sessionId</includeMdcKeyName>
+            <includeMdcKeyName>coroutineId</includeMdcKeyName>
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <version>[ignore]</version>
+            </fieldNames>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON_STDOUT"/>
+    </root>
+
+    <!-- Application at INFO in prod (no DEBUG) -->
+    <logger name="com.jh.proj" level="INFO"/>
+
+    <!-- Keep external libraries quiet -->
+    <logger name="org.eclipse.jetty" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="io.ktor" level="WARN"/>
+</configuration>

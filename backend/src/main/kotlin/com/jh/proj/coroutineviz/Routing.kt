@@ -1,5 +1,8 @@
 package com.jh.proj.coroutineviz
 
+import com.jh.proj.coroutineviz.routes.registerFlowScenarioRoutes
+import com.jh.proj.coroutineviz.routes.registerHealthRoutes
+import com.jh.proj.coroutineviz.routes.registerPatternRoutes
 import com.jh.proj.coroutineviz.routes.registerRootRoutes
 import com.jh.proj.coroutineviz.routes.registerScenarioRunnerRoutes
 import com.jh.proj.coroutineviz.routes.registerSessionRoutes
@@ -21,5 +24,8 @@ fun Application.configureRouting() {
         registerSessionRoutes()
         registerValidationRoutes()
         registerScenarioRunnerRoutes()
+        registerFlowScenarioRoutes()
+        registerPatternRoutes()
+        registerHealthRoutes()
     }
 }

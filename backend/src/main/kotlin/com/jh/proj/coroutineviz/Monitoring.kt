@@ -12,8 +12,10 @@ fun Application.configureMonitoring() {
 
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
-        // ...
     }
+
+    wireMetrics(appMicrometerRegistry)
+
     routing {
         get("/metrics-micrometer") {
             call.respond(appMicrometerRegistry.scrape())

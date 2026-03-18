@@ -4,12 +4,15 @@
   <CurrentIssues>
     <ID>CyclomaticComplexMethod:ProjectionService.kt$ProjectionService$private fun processEvent(event: VizEvent)</ID>
     <ID>CyclomaticComplexMethod:SessionRoutes.kt$fun Route.registerSessionRoutes()</ID>
+    <ID>InstanceOfCheckForException:PatternScenarios.kt$PatternScenarios$e is CancellationException</ID>
     <ID>InvalidPackageDeclaration:ApplicationTest.kt$package com.jh.proj</ID>
     <ID>InvalidPackageDeclaration:BaseTestService.kt$package com.jh.proj</ID>
     <ID>InvalidPackageDeclaration:StructuredConcurrencyTest.kt$package com.jh.proj</ID>
     <ID>InvalidPackageDeclaration:VizLaunchTest.kt$package com.jh.proj</ID>
     <ID>LongMethod:DispatcherExample.kt$suspend fun dispatcherExampleScenario()</ID>
+    <ID>LongMethod:FlowScenarioRoutes.kt$fun Route.registerFlowScenarioRoutes()</ID>
     <ID>LongMethod:InstrumentedDeferred.kt$InstrumentedDeferred$override suspend fun await(): T</ID>
+    <ID>LongMethod:PatternRoutes.kt$fun Route.registerPatternRoutes()</ID>
     <ID>LongMethod:ProjectionService.kt$ProjectionService$private fun processEvent(event: VizEvent)</ID>
     <ID>LongMethod:ScenarioRunner.kt$ScenarioRunner$suspend fun runOrderProcessingScenario( session: VizSession, shouldFail: Boolean = false, ): Job</ID>
     <ID>LongMethod:ScenarioRunner.kt$ScenarioRunner$suspend fun runReportGenerationScenario( session: VizSession, shouldTimeout: Boolean = false, ): Job</ID>
@@ -28,7 +31,24 @@
     <ID>MagicNumber:DispatcherExample.kt$60</ID>
     <ID>MagicNumber:FlowEventContext.kt$100</ID>
     <ID>MagicNumber:FlowEventContext.kt$200</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$10</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$100</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$20</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$200</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$3</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$30</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$4</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$5</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$50</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$6</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$7</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$8</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$80</ID>
+    <ID>MagicNumber:FlowScenarios.kt$FlowScenarios$9</ID>
     <ID>MagicNumber:HTTP.kt$3600</ID>
+    <ID>MagicNumber:HealthRoutes.kt$100</ID>
+    <ID>MagicNumber:HealthRoutes.kt$1024</ID>
+    <ID>MagicNumber:HealthRoutes.kt$90.0</ID>
     <ID>MagicNumber:InstrumentedChannel.kt$InstrumentedChannel$200</ID>
     <ID>MagicNumber:InstrumentedChannel.kt$InstrumentedChannel.&lt;no name provided>$200</ID>
     <ID>MagicNumber:InstrumentedFlow.kt$InstrumentedFlow$200</ID>
@@ -36,6 +56,21 @@
     <ID>MagicNumber:InstrumentedSharedFlow.kt$InstrumentedSharedFlow$100</ID>
     <ID>MagicNumber:InstrumentedSharedFlow.kt$InstrumentedSharedFlow$200</ID>
     <ID>MagicNumber:InstrumentedStateFlow.kt$InstrumentedStateFlow$200</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$100</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$100L</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$150</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$200</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$3</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$30</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$300</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$300L</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$4</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$400</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$5</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$50</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$8</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$80</ID>
+    <ID>MagicNumber:PatternScenarios.kt$PatternScenarios$9</ID>
     <ID>MagicNumber:ScenarioDTO.kt$1000L</ID>
     <ID>MagicNumber:ScenarioRunner.kt$ScenarioRunner$10</ID>
     <ID>MagicNumber:ScenarioRunner.kt$ScenarioRunner$100</ID>
@@ -92,9 +127,12 @@
     <ID>ReturnCount:DeadlockDetector.kt$DeadlockDetector$private fun detectCycleDFS( node: String, graph: Map&lt;String, String>, visited: MutableSet&lt;String>, recursionStack: MutableSet&lt;String>, path: MutableList&lt;String>, ): List&lt;String>?</ID>
     <ID>ReturnCount:HierarchyValidator.kt$HierarchyValidator$private fun checkParentNotCompletedBeforeChildren( childCreated: CoroutineCreated, parentId: String, byCoroutine: Map&lt;String, List&lt;CoroutineEvent>>, ): ValidationResult</ID>
     <ID>ReturnCount:SyncScenarios.kt$SyncScenarios$suspend fun processOrder(order: Order): Boolean</ID>
+    <ID>SwallowedException:PatternScenarios.kt$PatternScenarios$e: Exception</ID>
     <ID>SwallowedException:SyncScenarios.kt$SyncScenarios$e: Exception</ID>
     <ID>ThrowingExceptionsWithoutMessageOrCause:SuspensionPoint.kt$SuspensionPoint.Companion$Throwable()</ID>
     <ID>ThrowsCount:SyncValidators.kt$SemaphoreValidator$fun verifyPermitBounds( semaphoreId: String, maxPermits: Int, )</ID>
+    <ID>TooGenericExceptionCaught:PatternRoutes.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PatternScenarios.kt$PatternScenarios$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ScenarioRunner.kt$ScenarioRunner$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ScenarioRunnerRoutes.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SessionRoutes.kt$e: Exception</ID>
@@ -112,6 +150,7 @@
     <ID>TooManyFunctions:ScenarioRoutesTest.kt$ScenarioRoutesTest</ID>
     <ID>TooManyFunctions:SessionRoutesTest.kt$SessionRoutesTest</ID>
     <ID>TooManyFunctions:SyncPrimitivesTest.kt$SyncPrimitivesTest</ID>
+    <ID>TooManyFunctions:SyncValidatorsTest.kt$SyncValidatorsTest</ID>
     <ID>TooManyFunctions:VizSession.kt$VizSession</ID>
     <ID>UnusedParameter:FlowEventContext.kt$FlowEventContext$operatorName: String</ID>
     <ID>UnusedParameter:ProjectionService.kt$ProjectionService$roots: List&lt;HierarchyNode></ID>
