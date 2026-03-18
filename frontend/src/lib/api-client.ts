@@ -13,6 +13,7 @@ import type {
   PaginatedEventsRequest,
   PaginatedEventsResponse,
   ValidationResult,
+  SessionComparison,
 } from '@/types/api'
 import { normalizeEvents } from './utils'
 
@@ -152,6 +153,13 @@ class ApiClient {
 
   async getValidationRules(): Promise<{ rules: Array<{ id: string; name: string; description: string }> }> {
     return this.fetchJson(`/validate/rules`)
+  }
+
+  // Comparison
+  async compareSessions(sessionA: string, sessionB: string): Promise<SessionComparison> {
+    return this.fetchJson<SessionComparison>(
+      `/compare?sessionA=${encodeURIComponent(sessionA)}&sessionB=${encodeURIComponent(sessionB)}`,
+    )
   }
 }
 
