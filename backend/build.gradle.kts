@@ -24,6 +24,9 @@ application {
 }
 
 dependencies {
+    // Core library (events, wrappers, session, validation)
+    implementation(project(":coroutine-viz-core"))
+
     implementation("org.openfolder:kotlin-asyncapi-ktor:3.1.3")
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-cors")
