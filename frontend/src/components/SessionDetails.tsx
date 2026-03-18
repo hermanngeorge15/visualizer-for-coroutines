@@ -17,6 +17,8 @@ import { FlowPanel } from './flow/FlowPanel'
 import { SyncPanel } from './sync/SyncPanel'
 import { JobPanel } from './jobs/JobPanel'
 import { ValidationPanel } from './validation/ValidationPanel'
+import { OrderProcessingView } from './scenarios/OrderProcessingView'
+import { RegistrationFlowView } from './scenarios/RegistrationFlowView'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import type { JobStateChangedEvent } from '@/types/api'
@@ -303,6 +305,14 @@ export function SessionDetails({ sessionId, scenarioId, scenarioName }: SessionD
 
       {/* Structured Concurrency Info - Show when session has coroutines */}
       {session.coroutineCount > 0 && <StructuredConcurrencyInfo />}
+
+      {/* Scenario Pipeline View - shown for realistic scenarios */}
+      {scenarioId === 'order-processing' && allEvents.length > 0 && (
+        <OrderProcessingView events={allEvents} />
+      )}
+      {scenarioId === 'user-registration' && allEvents.length > 0 && (
+        <RegistrationFlowView events={allEvents} />
+      )}
 
       {/* Main Tabs */}
       <Tabs aria-label="Session tabs" variant="bordered" fullWidth>
