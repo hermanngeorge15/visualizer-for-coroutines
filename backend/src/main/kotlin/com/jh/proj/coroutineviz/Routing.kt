@@ -22,17 +22,15 @@ fun Application.configureRouting() {
         registerRootRoutes()
         registerHealthRoutes()
 
-        // Protected routes — require API key when configured
-        authenticatedApi {
-            registerVizScenarioRoutes()
-            registerSyncScenarioRoutes()
-            registerTestRoutes()
-            registerSessionRoutes()
-            registerValidationRoutes()
-            registerScenarioRunnerRoutes()
-            registerFlowScenarioRoutes()
-            registerPatternRoutes()
-            registerComparisonRoutes()
-        }
+        // API routes
+        registerVizScenarioRoutes()
+        registerSyncScenarioRoutes()
+        registerTestRoutes()
+        registerSessionRoutes()
+        registerValidationRoutes()
+        registerScenarioRunnerRoutes()
+        registerFlowScenarioRoutes()
+        registerPatternRoutes()
+        registerComparisonRoutes()
     }
 }
