@@ -708,6 +708,38 @@
   },
   "description" : "An action to execute inside a coroutine. Supported types are \"delay\", \"throw\"/\"exception\", \"log\", and \"custom\".\n"
 };
+            defs["CoroutineComparison"] = {
+  "required" : [ "coroutineId", "eventCountA", "eventCountB", "stateA", "stateB" ],
+  "type" : "object",
+  "properties" : {
+    "coroutineId" : {
+      "type" : "string",
+      "description" : "Shared coroutine identifier"
+    },
+    "label" : {
+      "type" : "string",
+      "description" : "Coroutine label (taken from session A if available)",
+      "nullable" : true
+    },
+    "stateA" : {
+      "type" : "string",
+      "description" : "Coroutine state in session A"
+    },
+    "stateB" : {
+      "type" : "string",
+      "description" : "Coroutine state in session B"
+    },
+    "eventCountA" : {
+      "type" : "integer",
+      "description" : "Number of events for this coroutine in session A"
+    },
+    "eventCountB" : {
+      "type" : "integer",
+      "description" : "Number of events for this coroutine in session B"
+    }
+  },
+  "description" : "Comparison of a single coroutine that exists in both sessions.\n"
+};
             defs["CoroutineConfigDTO"] = {
   "required" : [ "id", "label" ],
   "type" : "object",
@@ -1203,6 +1235,55 @@
   },
   "description" : "Inline scenario results containing the full event list and coroutine node data in a single response. Used by the viz helper endpoint.\n"
 };
+            defs["SessionComparison"] = {
+  "required" : [ "commonCoroutines", "coroutineCountDiff", "coroutinesOnlyInA", "coroutinesOnlyInB", "eventCountDiff", "sessionA", "sessionB", "totalDurationDiffNanos" ],
+  "type" : "object",
+  "properties" : {
+    "sessionA" : {
+      "type" : "string",
+      "description" : "ID of the first (baseline) session"
+    },
+    "sessionB" : {
+      "type" : "string",
+      "description" : "ID of the second (comparison) session"
+    },
+    "coroutineCountDiff" : {
+      "type" : "integer",
+      "description" : "Difference in coroutine count (B minus A)"
+    },
+    "eventCountDiff" : {
+      "type" : "integer",
+      "description" : "Difference in event count (B minus A)"
+    },
+    "totalDurationDiffNanos" : {
+      "type" : "integer",
+      "description" : "Difference in total session duration in nanoseconds (B minus A)",
+      "format" : "int64"
+    },
+    "coroutinesOnlyInA" : {
+      "type" : "array",
+      "description" : "Coroutine IDs present only in session A",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "coroutinesOnlyInB" : {
+      "type" : "array",
+      "description" : "Coroutine IDs present only in session B",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "commonCoroutines" : {
+      "type" : "array",
+      "description" : "Per-coroutine comparison for coroutines in both sessions",
+      "items" : {
+        "$ref" : "#/components/schemas/CoroutineComparison"
+      }
+    }
+  },
+  "description" : "Structured diff between two visualization sessions, including aggregate metrics and per-coroutine breakdowns.\n"
+};
             defs["SessionInfo"] = {
   "required" : [ "coroutineCount", "eventCount", "sessionId" ],
   "type" : "object",
@@ -1482,6 +1563,10 @@
             -->
             <li class="nav-fixed nav-header active" data-group="_"><a href="#api-_">API Summary</a></li>
 
+                  <li class="nav-header" data-group="Comparison"><a href="#api-Comparison">API Methods - Comparison</a></li>
+                    <li data-group="Comparison" data-name="compareSessions" class="">
+                      <a href="#api-Comparison-compareSessions">compareSessions</a>
+                    </li>
                   <li class="nav-header" data-group="Events"><a href="#api-Events">API Methods - Events</a></li>
                     <li data-group="Events" data-name="getSessionEvents" class="">
                       <a href="#api-Events-getSessionEvents">getSessionEvents</a>
@@ -1676,6 +1761,433 @@
           </div>
         </div>
         <div id="sections">
+                <section id="api-Comparison">
+                  <h1>Comparison</h1>
+                    <div id="api-Comparison-compareSessions">
+                      <article id="api-Comparison-compareSessions-0" data-group="User" data-name="compareSessions" data-version="0">
+                        <div class="pull-left">
+                          <h1>compareSessions</h1>
+                          <p>Compare two sessions</p>
+                        </div>
+                        <div class="pull-right"></div>
+                        <div class="clearfix"></div>
+                        <p></p>
+                        <p class="marked">Produces a structured diff between two visualization sessions. The comparison includes aggregate differences (coroutine count, event count, duration), coroutines unique to each session, and per-coroutine state and event count comparisons for shared coroutines.
+</p>
+                        <p></p>
+                        <br />
+                        <pre class="prettyprint language-html prettyprinted" data-type="get"><code><span class="pln">/api/compare</span></code></pre>
+                        <p>
+                          <h3>Usage and SDK Samples</h3>
+                        </p>
+                        <ul class="nav nav-tabs nav-tabs-examples">
+                          <li class="active"><a href="#examples-Comparison-compareSessions-0-curl">Curl</a></li>
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-java">Java</a></li>
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-android">Android</a></li>
+                          <!--<li class=""><a href="#examples-Comparison-compareSessions-0-groovy">Groovy</a></li>-->
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-objc">Obj-C</a></li>
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-javascript">JavaScript</a></li>
+                          <!--<li class=""><a href="#examples-Comparison-compareSessions-0-angular">Angular</a></li>-->
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-csharp">C#</a></li>
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-php">PHP</a></li>
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-perl">Perl</a></li>
+                          <li class=""><a href="#examples-Comparison-compareSessions-0-python">Python</a></li>
+                        </ul>
+
+                        <div class="tab-content">
+                          <div class="tab-pane active" id="examples-Comparison-compareSessions-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X GET\
+-H "Accept: application/json"\
+"http://0.0.0.0:8080/api/compare?sessionA=&sessionB="</code></pre>
+                          </div>
+                          <div class="tab-pane" id="examples-Comparison-compareSessions-0-java">
+                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.*;
+import io.swagger.client.auth.*;
+import io.swagger.client.model.*;
+import io.swagger.client.api.ComparisonApi;
+
+import java.io.File;
+import java.util.*;
+
+public class ComparisonApiExample {
+
+    public static void main(String[] args) {
+        
+        ComparisonApi apiInstance = new ComparisonApi();
+        String sessionA = sessionA_example; // String | ID of the first (baseline) session
+        String sessionB = sessionB_example; // String | ID of the second (comparison) session
+        try {
+            SessionComparison result = apiInstance.compareSessions(sessionA, sessionB);
+            System.out.println(result);
+        } catch (ApiException e) {
+            System.err.println("Exception when calling ComparisonApi#compareSessions");
+            e.printStackTrace();
+        }
+    }
+}</code></pre>
+                          </div>
+
+                          <div class="tab-pane" id="examples-Comparison-compareSessions-0-android">
+                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.ComparisonApi;
+
+public class ComparisonApiExample {
+
+    public static void main(String[] args) {
+        ComparisonApi apiInstance = new ComparisonApi();
+        String sessionA = sessionA_example; // String | ID of the first (baseline) session
+        String sessionB = sessionB_example; // String | ID of the second (comparison) session
+        try {
+            SessionComparison result = apiInstance.compareSessions(sessionA, sessionB);
+            System.out.println(result);
+        } catch (ApiException e) {
+            System.err.println("Exception when calling ComparisonApi#compareSessions");
+            e.printStackTrace();
+        }
+    }
+}</code></pre>
+                          </div>
+  <!--
+  <div class="tab-pane" id="examples-Comparison-compareSessions-0-groovy">
+  <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
+  </div> -->
+                            <div class="tab-pane" id="examples-Comparison-compareSessions-0-objc">
+                              <pre class="prettyprint"><code class="language-cpp">String *sessionA = sessionA_example; // ID of the first (baseline) session
+String *sessionB = sessionB_example; // ID of the second (comparison) session
+
+ComparisonApi *apiInstance = [[ComparisonApi alloc] init];
+
+// Compare two sessions
+[apiInstance compareSessionsWith:sessionA
+    sessionB:sessionB
+              completionHandler: ^(SessionComparison output, NSError* error) {
+                            if (output) {
+                                NSLog(@"%@", output);
+                            }
+                            if (error) {
+                                NSLog(@"Error: %@", error);
+                            }
+                        }];
+</code></pre>
+                            </div>
+
+                            <div class="tab-pane" id="examples-Comparison-compareSessions-0-javascript">
+                              <pre class="prettyprint"><code class="language-js">var CoroutineVisualizerApi = require('coroutine_visualizer_api');
+
+var api = new CoroutineVisualizerApi.ComparisonApi()
+var sessionA = sessionA_example; // {{String}} ID of the first (baseline) session
+var sessionB = sessionB_example; // {{String}} ID of the second (comparison) session
+
+var callback = function(error, data, response) {
+  if (error) {
+    console.error(error);
+  } else {
+    console.log('API called successfully. Returned data: ' + data);
+  }
+};
+api.compareSessions(sessionA, sessionB, callback);
+</code></pre>
+                            </div>
+
+                            <!--<div class="tab-pane" id="examples-Comparison-compareSessions-0-angular">
+              <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
+            </div>-->
+                            <div class="tab-pane" id="examples-Comparison-compareSessions-0-csharp">
+                              <pre class="prettyprint"><code class="language-cs">using System;
+using System.Diagnostics;
+using IO.Swagger.Api;
+using IO.Swagger.Client;
+using IO.Swagger.Model;
+
+namespace Example
+{
+    public class compareSessionsExample
+    {
+        public void main()
+        {
+
+            var apiInstance = new ComparisonApi();
+            var sessionA = sessionA_example;  // String | ID of the first (baseline) session
+            var sessionB = sessionB_example;  // String | ID of the second (comparison) session
+
+            try
+            {
+                // Compare two sessions
+                SessionComparison result = apiInstance.compareSessions(sessionA, sessionB);
+                Debug.WriteLine(result);
+            }
+            catch (Exception e)
+            {
+                Debug.Print("Exception when calling ComparisonApi.compareSessions: " + e.Message );
+            }
+        }
+    }
+}
+</code></pre>
+                            </div>
+
+                            <div class="tab-pane" id="examples-Comparison-compareSessions-0-php">
+                              <pre class="prettyprint"><code class="language-php"><&#63;php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+$api_instance = new Swagger\Client\ApiComparisonApi();
+$sessionA = sessionA_example; // String | ID of the first (baseline) session
+$sessionB = sessionB_example; // String | ID of the second (comparison) session
+
+try {
+    $result = $api_instance->compareSessions($sessionA, $sessionB);
+    print_r($result);
+} catch (Exception $e) {
+    echo 'Exception when calling ComparisonApi->compareSessions: ', $e->getMessage(), PHP_EOL;
+}
+?></code></pre>
+                            </div>
+
+                            <div class="tab-pane" id="examples-Comparison-compareSessions-0-perl">
+                              <pre class="prettyprint"><code class="language-perl">use Data::Dumper;
+use WWW::SwaggerClient::Configuration;
+use WWW::SwaggerClient::ComparisonApi;
+
+my $api_instance = WWW::SwaggerClient::ComparisonApi->new();
+my $sessionA = sessionA_example; # String | ID of the first (baseline) session
+my $sessionB = sessionB_example; # String | ID of the second (comparison) session
+
+eval { 
+    my $result = $api_instance->compareSessions(sessionA => $sessionA, sessionB => $sessionB);
+    print Dumper($result);
+};
+if ($@) {
+    warn "Exception when calling ComparisonApi->compareSessions: $@\n";
+}</code></pre>
+                            </div>
+
+                            <div class="tab-pane" id="examples-Comparison-compareSessions-0-python">
+                              <pre class="prettyprint"><code class="language-python">from __future__ import print_statement
+import time
+import swagger_client
+from swagger_client.rest import ApiException
+from pprint import pprint
+
+# create an instance of the API class
+api_instance = swagger_client.ComparisonApi()
+sessionA = sessionA_example # String | ID of the first (baseline) session
+sessionB = sessionB_example # String | ID of the second (comparison) session
+
+try: 
+    # Compare two sessions
+    api_response = api_instance.compare_sessions(sessionA, sessionB)
+    pprint(api_response)
+except ApiException as e:
+    print("Exception when calling ComparisonApi->compareSessions: %s\n" % e)</code></pre>
+                            </div>
+                          </div>
+
+                          <h2>Parameters</h2>
+
+
+
+
+
+                            <div class="methodsubtabletitle">Query parameters</div>
+                            <table id="methodsubtable">
+                              <tr>
+                                <th width="150px">Name</th>
+                                <th>Description</th>
+                              </tr>
+                                <tr><td style="width:150px;">sessionA*</td>
+                                <td>
+                                
+                                
+                                    <div id="d2e199_compareSessions_sessionA">
+                                        <div class="json-schema-view">
+                                            <div class="primitive">
+                                                <span class="type">
+                                                    String
+                                                </span>
+                                
+                                                    <div class="inner description">
+                                                        ID of the first (baseline) session
+                                                    </div>
+                                            </div>
+                                                <div class="inner required">
+                                                    Required
+                                                </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                </tr>
+                                <tr><td style="width:150px;">sessionB*</td>
+                                <td>
+                                
+                                
+                                    <div id="d2e199_compareSessions_sessionB">
+                                        <div class="json-schema-view">
+                                            <div class="primitive">
+                                                <span class="type">
+                                                    String
+                                                </span>
+                                
+                                                    <div class="inner description">
+                                                        ID of the second (comparison) session
+                                                    </div>
+                                            </div>
+                                                <div class="inner required">
+                                                    Required
+                                                </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                </tr>
+                            </table>
+
+                          <h2>Responses</h2>
+                            <h3> Status: 200 - Session comparison results </h3>
+
+                            <ul class="nav nav-tabs nav-tabs-examples" >
+                                <li class="active">
+                                  <a data-toggle="tab" href="#responses-compareSessions-200-schema">Schema</a>
+                                </li>
+
+                            </ul>
+
+                            <div class="tab-content" style='margin-bottom: 10px;'>
+                                <div class="tab-pane active" id="responses-compareSessions-200-schema">
+                                  <div id='responses-compareSessions-200-schema-200' style="padding: 30px; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                                    <script>
+                                      $(document).ready(function() {
+                                        var schemaWrapper = {
+  "description" : "Session comparison results",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/SessionComparison"
+      }
+    }
+  }
+};
+                                        var schema = schemaWrapper.content["application/json"].schema;
+                                        if (schema.$ref != null) {
+                                          schema = defsParser.$refs.get(schema.$ref);
+                                        } else {
+                                          schemaWrapper.components = {};
+                                          schemaWrapper.components.schemas = Object.assign({}, defs);
+                                          $RefParser.dereference(schemaWrapper).catch(function(err) {
+                                            console.log(err);
+                                          });
+                                        }
+
+                                        //console.log(JSON.stringify(schema));
+                                        var view = new JSONSchemaView(schema, 3);
+                                        $('#responses-compareSessions-200-schema-data').val(stringify(schema));
+                                        var result = $('#responses-compareSessions-200-schema-200');
+                                        result.empty();
+                                        result.append(view.render());
+                                      });
+                                    </script>
+                                  </div>
+                                  <input id='responses-compareSessions-200-schema-data' type='hidden' value=''></input>
+                                </div>
+                            </div>
+
+                            <h3> Status: 400 - Missing required query parameters </h3>
+
+                            <ul class="nav nav-tabs nav-tabs-examples" >
+                                <li class="active">
+                                  <a data-toggle="tab" href="#responses-compareSessions-400-schema">Schema</a>
+                                </li>
+
+                            </ul>
+
+                            <div class="tab-content" style='margin-bottom: 10px;'>
+                                <div class="tab-pane active" id="responses-compareSessions-400-schema">
+                                  <div id='responses-compareSessions-400-schema-400' style="padding: 30px; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                                    <script>
+                                      $(document).ready(function() {
+                                        var schemaWrapper = {
+  "description" : "Missing required query parameters",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/ErrorResponse"
+      }
+    }
+  }
+};
+                                        var schema = schemaWrapper.content["application/json"].schema;
+                                        if (schema.$ref != null) {
+                                          schema = defsParser.$refs.get(schema.$ref);
+                                        } else {
+                                          schemaWrapper.components = {};
+                                          schemaWrapper.components.schemas = Object.assign({}, defs);
+                                          $RefParser.dereference(schemaWrapper).catch(function(err) {
+                                            console.log(err);
+                                          });
+                                        }
+
+                                        //console.log(JSON.stringify(schema));
+                                        var view = new JSONSchemaView(schema, 3);
+                                        $('#responses-compareSessions-400-schema-data').val(stringify(schema));
+                                        var result = $('#responses-compareSessions-400-schema-400');
+                                        result.empty();
+                                        result.append(view.render());
+                                      });
+                                    </script>
+                                  </div>
+                                  <input id='responses-compareSessions-400-schema-data' type='hidden' value=''></input>
+                                </div>
+                            </div>
+
+                            <h3> Status: 404 - One or both sessions not found </h3>
+
+                            <ul class="nav nav-tabs nav-tabs-examples" >
+                                <li class="active">
+                                  <a data-toggle="tab" href="#responses-compareSessions-404-schema">Schema</a>
+                                </li>
+
+                            </ul>
+
+                            <div class="tab-content" style='margin-bottom: 10px;'>
+                                <div class="tab-pane active" id="responses-compareSessions-404-schema">
+                                  <div id='responses-compareSessions-404-schema-404' style="padding: 30px; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                                    <script>
+                                      $(document).ready(function() {
+                                        var schemaWrapper = {
+  "description" : "One or both sessions not found",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/ErrorResponse"
+      }
+    }
+  }
+};
+                                        var schema = schemaWrapper.content["application/json"].schema;
+                                        if (schema.$ref != null) {
+                                          schema = defsParser.$refs.get(schema.$ref);
+                                        } else {
+                                          schemaWrapper.components = {};
+                                          schemaWrapper.components.schemas = Object.assign({}, defs);
+                                          $RefParser.dereference(schemaWrapper).catch(function(err) {
+                                            console.log(err);
+                                          });
+                                        }
+
+                                        //console.log(JSON.stringify(schema));
+                                        var view = new JSONSchemaView(schema, 3);
+                                        $('#responses-compareSessions-404-schema-data').val(stringify(schema));
+                                        var result = $('#responses-compareSessions-404-schema-404');
+                                        result.empty();
+                                        result.append(view.render());
+                                      });
+                                    </script>
+                                  </div>
+                                  <input id='responses-compareSessions-404-schema-data' type='hidden' value=''></input>
+                                </div>
+                            </div>
+
+                        </article>
+                      </div>
+                      <hr>
+                  </section>
                 <section id="api-Events">
                   <h1>Events</h1>
                     <div id="api-Events-getSessionEvents">
