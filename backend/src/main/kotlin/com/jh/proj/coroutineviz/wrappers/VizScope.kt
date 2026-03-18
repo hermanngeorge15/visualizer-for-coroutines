@@ -1,14 +1,11 @@
 package com.jh.proj.coroutineviz.wrappers
 
-import com.jh.proj.coroutineviz.events.deferred.DeferredValueAvailable
-import com.jh.proj.coroutineviz.events.flow.FlowCreated
-import com.jh.proj.coroutineviz.wrappers.InstrumentedDeferred
 import com.jh.proj.coroutineviz.events.SuspensionPoint
+import com.jh.proj.coroutineviz.events.deferred.DeferredValueAvailable
 import com.jh.proj.coroutineviz.events.dispatcher.ThreadAssigned
+import com.jh.proj.coroutineviz.events.flow.FlowCreated
 import com.jh.proj.coroutineviz.session.EventContext
-import com.jh.proj.coroutineviz.session.JobStatusMonitor
 import com.jh.proj.coroutineviz.session.VizSession
-import kotlinx.coroutines.channels.Channel
 import com.jh.proj.coroutineviz.session.coroutineBodyCompleted
 import com.jh.proj.coroutineviz.session.coroutineCancelled
 import com.jh.proj.coroutineviz.session.coroutineCompleted
@@ -17,8 +14,8 @@ import com.jh.proj.coroutineviz.session.coroutineFailed
 import com.jh.proj.coroutineviz.session.coroutineResumed
 import com.jh.proj.coroutineviz.session.coroutineStarted
 import com.jh.proj.coroutineviz.session.coroutineSuspended
-import com.jh.proj.coroutineviz.session.waitingForChildren
 import com.jh.proj.coroutineviz.session.jobStateChanged
+import com.jh.proj.coroutineviz.session.waitingForChildren
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -56,10 +54,10 @@ import kotlin.coroutines.EmptyCoroutineContext
 class VizScope(
     internal val session: VizSession,
     context: CoroutineContext = EmptyCoroutineContext,
-    val scopeId: String = "scope-${session.nextSeq()}"
+    val scopeId: String = "scope-${session.nextSeq()}",
 ) : CoroutineScope {
-
     override val coroutineContext: CoroutineContext = context + CoroutineName("VizScope-$scopeId")
+
     /**
      * Launch a coroutine with visualization tracking while maintaining structured concurrency.
      *
@@ -85,31 +83,34 @@ class VizScope(
         val parentCoroutineId = parentElement?.coroutineId
 
         val coroutineId = "coroutine-${session.nextSeq()}"
-        val jobId = "job-${coroutineId}"
+        val jobId = "job-$coroutineId"
 
-        val vizElement = VizCoroutineElement(
-            coroutineId = coroutineId,
-            label = label,
-            parentCoroutineId = parentCoroutineId,
-            scopeId = scopeId,
-            jobId = jobId,
-        )
+        val vizElement =
+            VizCoroutineElement(
+                coroutineId = coroutineId,
+                label = label,
+                parentCoroutineId = parentCoroutineId,
+                scopeId = scopeId,
+                jobId = jobId,
+            )
 
         // ✅ Create EventContext once for this coroutine
-        val ctx = EventContext(
-            session = session,
-            coroutineId = coroutineId,
-            jobId = jobId,
-            parentCoroutineId = parentCoroutineId,
-            scopeId = scopeId,
-            label = label
-        )
+        val ctx =
+            EventContext(
+                session = session,
+                coroutineId = coroutineId,
+                jobId = jobId,
+                parentCoroutineId = parentCoroutineId,
+                scopeId = scopeId,
+                label = label,
+            )
 
         // Check if we're in a nested context (inside another vizLaunch/vizAsync)
         // If so, use current scope; otherwise use VizScope
-        val targetScope = currentCoroutineContext()[VizCoroutineElement]?.let {
-            CoroutineScope(currentCoroutineContext())
-        } ?: this
+        val targetScope =
+            currentCoroutineContext()[VizCoroutineElement]?.let {
+                CoroutineScope(currentCoroutineContext())
+            } ?: this
 
         // Merge VizScope's own context (which may contain a specific dispatcher)
         // so that e.g. ioScope.vizLaunch() uses the IO dispatcher even when nested
@@ -118,48 +119,48 @@ class VizScope(
         // Launch with the viz element in context
         // scopeDispatcher is applied first, then overridden by explicit context if provided
         val mergedContext = (scopeDispatcher ?: EmptyCoroutineContext) + context + vizElement
-        val job = targetScope.launch(mergedContext) {
-            val currentJob = coroutineContext[Job] ?: throw IllegalArgumentException("Missing job")
-            // ✨ NEW: Register job for tracking
-            session.snapshot.registerJob(currentJob, coroutineId)
+        val job =
+            targetScope.launch(mergedContext) {
+                val currentJob = coroutineContext[Job] ?: throw IllegalArgumentException("Missing job")
+                // ✨ NEW: Register job for tracking
+                session.snapshot.registerJob(currentJob, coroutineId)
 
-            // ✨ NEW: Optionally track with monitor
-            session.jobMonitor.track(currentJob, jobId, coroutineId)
+                // ✨ NEW: Optionally track with monitor
+                session.jobMonitor.track(currentJob, jobId, coroutineId)
 
-            // register currentJob with coroutineId
-            session.snapshot.registerJob(currentJob,coroutineId)
-            // ✅ EMIT: CoroutineCreated
-            session.send(ctx.coroutineCreated())
+                // register currentJob with coroutineId
+                session.snapshot.registerJob(currentJob, coroutineId)
+                // ✅ EMIT: CoroutineCreated
+                session.send(ctx.coroutineCreated())
 
-            // ✅ EMIT: CoroutineStarted
-            session.send(ctx.coroutineStarted())
+                // ✅ EMIT: CoroutineStarted
+                session.send(ctx.coroutineStarted())
 
-            // EMIT: ThreadAssigned
-            session.sent(
-                ThreadAssigned(
-                    sessionId = session.sessionId,
-                    seq = session.nextSeq(),
-                    tsNanos = System.nanoTime(),
-                    coroutineId = coroutineId,
-                    jobId = jobId,
-                    parentCoroutineId = parentCoroutineId,
-                    scopeId = scopeId,
-                    label = label,
-                    threadId = Thread.currentThread().threadId(),
-                    threadName = Thread.currentThread().name,
-                    dispatcherName = coroutineContext[ContinuationInterceptor]?.toString() ?: "Unknown"
+                // EMIT: ThreadAssigned
+                session.sent(
+                    ThreadAssigned(
+                        sessionId = session.sessionId,
+                        seq = session.nextSeq(),
+                        tsNanos = System.nanoTime(),
+                        coroutineId = coroutineId,
+                        jobId = jobId,
+                        parentCoroutineId = parentCoroutineId,
+                        scopeId = scopeId,
+                        label = label,
+                        threadId = Thread.currentThread().threadId(),
+                        threadName = Thread.currentThread().name,
+                        dispatcherName = coroutineContext[ContinuationInterceptor]?.toString() ?: "Unknown",
+                    ),
                 )
-            )
 
-            block()
+                block()
 
-            checkAndSendJobStateEvent(currentJob, ctx)
+                checkAndSendJobStateEvent(currentJob, ctx)
 
-            // Emit CoroutineBodyCompleted - the coroutine's own code has finished
-            // AND all children have completed (due to coroutineScope above)
-            session.sent(ctx.coroutineBodyCompleted())
-
-        }
+                // Emit CoroutineBodyCompleted - the coroutine's own code has finished
+                // AND all children have completed (due to coroutineScope above)
+                session.sent(ctx.coroutineBodyCompleted())
+            }
 
         // Register completion handler - this fires AFTER the job and all children complete
         // This is crucial for detecting the FINAL state of the Job:
@@ -174,7 +175,7 @@ class VizScope(
                 cause == null -> {
                     // Normal completion - body finished and all children completed successfully
                     session.send(
-                        ctx.coroutineCompleted()
+                        ctx.coroutineCompleted(),
                     )
                 }
 
@@ -183,12 +184,14 @@ class VizScope(
                     // Note: In practice, this rarely happens because coroutineScope
                     // converts exceptions to CancellationException
                     session.send(ctx.coroutineFailed(cause::class.simpleName, cause.message))
-                    session.send(ctx.jobStateChanged(
-                        isActive = false,
-                        isCompleted = false,
-                        isCancelled = true,
-                        childrenCount = coroutineContext[Job]?.children?.count() ?: 0
-                    ))
+                    session.send(
+                        ctx.jobStateChanged(
+                            isActive = false,
+                            isCompleted = false,
+                            isCancelled = true,
+                            childrenCount = coroutineContext[Job]?.children?.count() ?: 0,
+                        ),
+                    )
                 }
 
                 cause is CancellationException || job.isCancelled -> {
@@ -197,12 +200,14 @@ class VizScope(
                     // - Explicit cancellation
                     // - Parent cancelled
                     session.send(ctx.coroutineCancelled(cause.message ?: "CancellationException"))
-                    session.send(ctx.jobStateChanged(
-                        isActive = false,
-                        isCompleted = false,
-                        isCancelled = true,
-                        childrenCount = coroutineContext[Job]?.children?.count() ?: 0
-                    ))
+                    session.send(
+                        ctx.jobStateChanged(
+                            isActive = false,
+                            isCompleted = false,
+                            isCancelled = true,
+                            childrenCount = coroutineContext[Job]?.children?.count() ?: 0,
+                        ),
+                    )
                 }
 
                 else -> {
@@ -223,97 +228,100 @@ class VizScope(
     suspend fun <T> vizAsync(
         label: String? = null,
         context: CoroutineContext = EmptyCoroutineContext,
-        block: suspend VizScope.() -> T
+        block: suspend VizScope.() -> T,
     ): InstrumentedDeferred<T> {
         val parentElement = currentCoroutineContext()[VizCoroutineElement]
         val parentCoroutineId = parentElement?.coroutineId
 
         val coroutineId = "coroutine-${session.nextSeq()}"
-        val jobId = "job-${coroutineId}"
-        val deferredId = "deferred-${coroutineId}"
+        val jobId = "job-$coroutineId"
+        val deferredId = "deferred-$coroutineId"
 
-        val vizElement = VizCoroutineElement(
-            coroutineId = coroutineId,
-            label = label,
-            parentCoroutineId = parentCoroutineId,
-            scopeId = scopeId,
-            jobId = jobId
-        )
+        val vizElement =
+            VizCoroutineElement(
+                coroutineId = coroutineId,
+                label = label,
+                parentCoroutineId = parentCoroutineId,
+                scopeId = scopeId,
+                jobId = jobId,
+            )
 
-        val ctx = EventContext(
-            session = session,
-            coroutineId = coroutineId,
-            jobId = jobId,
-            parentCoroutineId = parentCoroutineId,
-            scopeId = scopeId,
-            label = label
-        )
+        val ctx =
+            EventContext(
+                session = session,
+                coroutineId = coroutineId,
+                jobId = jobId,
+                parentCoroutineId = parentCoroutineId,
+                scopeId = scopeId,
+                label = label,
+            )
 
         // Check if we're in a nested context (inside another vizLaunch/vizAsync)
         // If so, use current scope; otherwise use VizScope
-        val targetScope = currentCoroutineContext()[VizCoroutineElement]?.let {
-            CoroutineScope(currentCoroutineContext())
-        } ?: this
+        val targetScope =
+            currentCoroutineContext()[VizCoroutineElement]?.let {
+                CoroutineScope(currentCoroutineContext())
+            } ?: this
 
         // Merge VizScope's own context (which may contain a specific dispatcher)
         val scopeDispatcher = this.coroutineContext[ContinuationInterceptor]
         val mergedContext = (scopeDispatcher ?: EmptyCoroutineContext) + context + vizElement
 
         // Use async{} instead of launch{}
-        val deferred = targetScope.async(mergedContext) {
+        val deferred =
+            targetScope.async(mergedContext) {
+                val currentJob = coroutineContext[Job] ?: throw IllegalArgumentException("Missing job")
 
-            val currentJob = coroutineContext[Job] ?: throw IllegalArgumentException("Missing job")
+                // ✨ Register job for tracking (must happen inside async where Job exists)
+                session.snapshot.registerJob(currentJob, coroutineId)
+                session.jobMonitor.track(currentJob, jobId, coroutineId)
 
-            // ✨ Register job for tracking (must happen inside async where Job exists)
-            session.snapshot.registerJob(currentJob, coroutineId)
-            session.jobMonitor.track(currentJob, jobId, coroutineId)
+                // Emit lifecycle events (similar to vizLaunch)
+                session.send(ctx.coroutineCreated())
+                session.send(ctx.coroutineStarted())
 
-            // Emit lifecycle events (similar to vizLaunch)
-            session.send(ctx.coroutineCreated())
-            session.send(ctx.coroutineStarted())
-
-            session.sent(
-                ThreadAssigned(
-                    sessionId = session.sessionId,
-                    seq = session.nextSeq(),
-                    tsNanos = System.nanoTime(),
-                    coroutineId = coroutineId,
-                    jobId = jobId,
-                    parentCoroutineId = parentCoroutineId,
-                    scopeId = scopeId,
-                    label = label,
-                    threadId = Thread.currentThread().threadId(),
-                    threadName = Thread.currentThread().name,
-                    dispatcherName = coroutineContext[ContinuationInterceptor]?.toString() ?: "Unknown"
+                session.sent(
+                    ThreadAssigned(
+                        sessionId = session.sessionId,
+                        seq = session.nextSeq(),
+                        tsNanos = System.nanoTime(),
+                        coroutineId = coroutineId,
+                        jobId = jobId,
+                        parentCoroutineId = parentCoroutineId,
+                        scopeId = scopeId,
+                        label = label,
+                        threadId = Thread.currentThread().threadId(),
+                        threadName = Thread.currentThread().name,
+                        dispatcherName = coroutineContext[ContinuationInterceptor]?.toString() ?: "Unknown",
+                    ),
                 )
-            )
-            // Execute block
-            val result = block()
+                // Execute block
+                val result = block()
 
-            checkAndSendJobStateEvent(currentJob, ctx)
+                checkAndSendJobStateEvent(currentJob, ctx)
 
-            // Emit body completed
-            session.sent(
-                ctx.coroutineBodyCompleted()
-            )
-
-            // Emit deferred value available
-            session.sent(
-                DeferredValueAvailable(
-                    sessionId = session.sessionId,
-                    seq = session.nextSeq(),
-                    tsNanos = System.nanoTime(),
-                    coroutineId = coroutineId,
-                    jobId = jobId,
-                    parentCoroutineId = parentCoroutineId,
-                    scopeId = scopeId,
-                    label = label,
-                    deferredId = deferredId
+                // Emit body completed
+                session.sent(
+                    ctx.coroutineBodyCompleted(),
                 )
-            )
 
-            result
-        }
+                // Emit deferred value available
+                session.sent(
+                    DeferredValueAvailable(
+                        sessionId = session.sessionId,
+                        seq = session.nextSeq(),
+                        tsNanos = System.nanoTime(),
+                        coroutineId = coroutineId,
+                        jobId = jobId,
+                        parentCoroutineId = parentCoroutineId,
+                        scopeId = scopeId,
+                        label = label,
+                        deferredId = deferredId,
+                    ),
+                )
+
+                result
+            }
 
         // Register completion handler (same logic as vizLaunch)
         // session.send() is NOT suspend, so we can call it directly
@@ -325,7 +333,7 @@ class VizScope(
                 cause == null -> {
                     // Normal completion - body finished and all children completed successfully
                     session.send(
-                        ctx.coroutineCompleted()
+                        ctx.coroutineCompleted(),
                     )
                 }
 
@@ -362,7 +370,7 @@ class VizScope(
             jobId = jobId,
             parentCoroutineId = parentCoroutineId,
             scopeId = scopeId,
-            label = label
+            label = label,
         )
     }
 
@@ -374,21 +382,22 @@ class VizScope(
 
         if (coroutineElement != null) {
             // Create EventContext for this coroutine
-            val ctx = EventContext(
-                session = session,
-                coroutineId = coroutineElement.coroutineId,
-                jobId = coroutineElement.jobId,
-                parentCoroutineId = coroutineElement.parentCoroutineId,
-                scopeId = coroutineElement.scopeId,
-                label = coroutineElement.label
-            )
+            val ctx =
+                EventContext(
+                    session = session,
+                    coroutineId = coroutineElement.coroutineId,
+                    jobId = coroutineElement.jobId,
+                    parentCoroutineId = coroutineElement.parentCoroutineId,
+                    scopeId = coroutineElement.scopeId,
+                    label = coroutineElement.label,
+                )
 
             // Capture suspension point with stack trace
             val suspensionPoint = SuspensionPoint.capture("delay", skipFrames = 3)
 
             // Emit suspension with detailed info
             session.sent(
-                ctx.coroutineSuspended(reason = "delay", durationMillis = timeMillis, suspensionPoint = suspensionPoint)
+                ctx.coroutineSuspended(reason = "delay", durationMillis = timeMillis, suspensionPoint = suspensionPoint),
             )
 
             // Actual suspension
@@ -401,7 +410,6 @@ class VizScope(
             delay(timeMillis)
         }
     }
-
 
     /**
      * Cancel all coroutines in this VizScope and wait for them to complete.
@@ -417,21 +425,27 @@ class VizScope(
         coroutineContext[Job]?.cancel()
     }
 
-    private fun checkAndSendJobStateEvent(job: Job, ctx: EventContext) {
+    private fun checkAndSendJobStateEvent(
+        job: Job,
+        ctx: EventContext,
+    ) {
         val hasActiveChildren = job.children.any { it.isActive }
         if (hasActiveChildren) {
             val activeChildren = job.children.filter { it.isActive }.map { it.job }.toList()
             // Get child coroutine IDs from their contexts
-            val activeChildIds = activeChildren.mapNotNull { childJob ->
-                // Try to extract coroutineId from child job
-                // This requires tracking job->coroutineId mapping
-                session.snapshot.getCoroutineIdFromJob(childJob)
-            }
+            val activeChildIds =
+                activeChildren.mapNotNull { childJob ->
+                    // Try to extract coroutineId from child job
+                    // This requires tracking job->coroutineId mapping
+                    session.snapshot.getCoroutineIdFromJob(childJob)
+                }
 
-            session.send(ctx.waitingForChildren(
-                activeChildrenCount = activeChildren.count(),
-                activeChildrenIds = activeChildIds
-            ))
+            session.send(
+                ctx.waitingForChildren(
+                    activeChildrenCount = activeChildren.count(),
+                    activeChildrenIds = activeChildIds,
+                ),
+            )
         }
     }
 
@@ -465,14 +479,15 @@ class VizScope(
      */
     fun <T> vizFlow(
         label: String? = null,
-        block: suspend FlowCollector<T>.() -> Unit
+        block: suspend FlowCollector<T>.() -> Unit,
     ): InstrumentedFlow<T> {
         val flowId = "flow-${session.nextSeq()}"
-        val coroutineId = runCatching {
-            kotlinx.coroutines.runBlocking {
-                currentCoroutineContext()[VizCoroutineElement]?.coroutineId
-            }
-        }.getOrNull()
+        val coroutineId =
+            runCatching {
+                kotlinx.coroutines.runBlocking {
+                    currentCoroutineContext()[VizCoroutineElement]?.coroutineId
+                }
+            }.getOrNull()
 
         // Emit FlowCreated event
         session.send(
@@ -484,8 +499,8 @@ class VizScope(
                 flowId = flowId,
                 flowType = "Cold",
                 label = label,
-                scopeId = scopeId
-            )
+                scopeId = scopeId,
+            ),
         )
 
         // Create the underlying flow
@@ -497,7 +512,7 @@ class VizScope(
             session = session,
             flowId = flowId,
             flowType = "Cold",
-            label = label
+            label = label,
         )
     }
 
@@ -512,14 +527,15 @@ class VizScope(
      */
     fun <T> vizWrap(
         existingFlow: Flow<T>,
-        label: String? = null
+        label: String? = null,
     ): InstrumentedFlow<T> {
         val flowId = "flow-${session.nextSeq()}"
-        val coroutineId = runCatching {
-            kotlinx.coroutines.runBlocking {
-                currentCoroutineContext()[VizCoroutineElement]?.coroutineId
-            }
-        }.getOrNull()
+        val coroutineId =
+            runCatching {
+                kotlinx.coroutines.runBlocking {
+                    currentCoroutineContext()[VizCoroutineElement]?.coroutineId
+                }
+            }.getOrNull()
 
         // Emit FlowCreated event
         session.send(
@@ -531,8 +547,8 @@ class VizScope(
                 flowId = flowId,
                 flowType = "Cold",
                 label = label,
-                scopeId = scopeId
-            )
+                scopeId = scopeId,
+            ),
         )
 
         return InstrumentedFlow(
@@ -540,7 +556,7 @@ class VizScope(
             session = session,
             flowId = flowId,
             flowType = "Cold",
-            label = label
+            label = label,
         )
     }
 
@@ -558,14 +574,14 @@ class VizScope(
      */
     fun <T> vizStateFlow(
         initialValue: T,
-        label: String? = null
+        label: String? = null,
     ): InstrumentedStateFlow<T> {
         val flowId = "stateflow-${session.nextSeq()}"
         return InstrumentedStateFlow(
             delegate = MutableStateFlow(initialValue),
             session = session,
             flowId = flowId,
-            label = label
+            label = label,
         )
     }
 
@@ -587,7 +603,7 @@ class VizScope(
         replay: Int = 0,
         extraBufferCapacity: Int = 0,
         onBufferOverflow: BufferOverflow = BufferOverflow.SUSPEND,
-        label: String? = null
+        label: String? = null,
     ): InstrumentedSharedFlow<T> {
         val flowId = "sharedflow-${session.nextSeq()}"
         return InstrumentedSharedFlow(
@@ -595,7 +611,7 @@ class VizScope(
             session = session,
             flowId = flowId,
             label = label,
-            extraBufferCapacity = extraBufferCapacity
+            extraBufferCapacity = extraBufferCapacity,
         )
     }
 
@@ -612,7 +628,7 @@ class VizScope(
     fun vizInterval(
         periodMillis: Long,
         initialDelayMillis: Long = 0,
-        label: String? = null
+        label: String? = null,
     ): InstrumentedFlow<Long> {
         val flowId = "flow-interval-${session.nextSeq()}"
 
@@ -625,27 +641,28 @@ class VizScope(
                 flowId = flowId,
                 flowType = "Interval",
                 label = label ?: "interval(${periodMillis}ms)",
-                scopeId = scopeId
-            )
+                scopeId = scopeId,
+            ),
         )
 
-        val intervalFlow = flow {
-            if (initialDelayMillis > 0) {
-                delay(initialDelayMillis)
+        val intervalFlow =
+            flow {
+                if (initialDelayMillis > 0) {
+                    delay(initialDelayMillis)
+                }
+                var counter = 0L
+                while (true) {
+                    emit(counter++)
+                    delay(periodMillis)
+                }
             }
-            var counter = 0L
-            while (true) {
-                emit(counter++)
-                delay(periodMillis)
-            }
-        }
 
         return InstrumentedFlow(
             delegate = intervalFlow,
             session = session,
             flowId = flowId,
             flowType = "Interval",
-            label = label ?: "interval(${periodMillis}ms)"
+            label = label ?: "interval(${periodMillis}ms)",
         )
     }
 
@@ -660,7 +677,7 @@ class VizScope(
     fun vizRange(
         range: IntRange,
         delayMillis: Long = 0,
-        label: String? = null
+        label: String? = null,
     ): InstrumentedFlow<Int> {
         val flowId = "flow-range-${session.nextSeq()}"
 
@@ -673,25 +690,26 @@ class VizScope(
                 flowId = flowId,
                 flowType = "Range",
                 label = label ?: "range(${range.first}..${range.last})",
-                scopeId = scopeId
-            )
+                scopeId = scopeId,
+            ),
         )
 
-        val rangeFlow = flow {
-            for (value in range) {
-                emit(value)
-                if (delayMillis > 0) {
-                    delay(delayMillis)
+        val rangeFlow =
+            flow {
+                for (value in range) {
+                    emit(value)
+                    if (delayMillis > 0) {
+                        delay(delayMillis)
+                    }
                 }
             }
-        }
 
         return InstrumentedFlow(
             delegate = rangeFlow,
             session = session,
             flowId = flowId,
             flowType = "Range",
-            label = label ?: "range(${range.first}..${range.last})"
+            label = label ?: "range(${range.first}..${range.last})",
         )
     }
 
@@ -706,7 +724,7 @@ class VizScope(
     fun <T> vizFlowOf(
         vararg values: T,
         delayMillis: Long = 0,
-        label: String? = null
+        label: String? = null,
     ): InstrumentedFlow<T> {
         val flowId = "flow-of-${session.nextSeq()}"
 
@@ -719,27 +737,27 @@ class VizScope(
                 flowId = flowId,
                 flowType = "FlowOf",
                 label = label ?: "flowOf(${values.size} items)",
-                scopeId = scopeId
-            )
+                scopeId = scopeId,
+            ),
         )
 
-        val listFlow = flow {
-            for (value in values) {
-                emit(value)
-                if (delayMillis > 0) {
-                    delay(delayMillis)
+        val listFlow =
+            flow {
+                for (value in values) {
+                    emit(value)
+                    if (delayMillis > 0) {
+                        delay(delayMillis)
+                    }
                 }
             }
-        }
 
         return InstrumentedFlow(
             delegate = listFlow,
             session = session,
             flowId = flowId,
             flowType = "FlowOf",
-            label = label ?: "flowOf(${values.size} items)"
+            label = label ?: "flowOf(${values.size} items)",
         )
-
     }
 
     // ========================================================================
@@ -770,7 +788,7 @@ class VizScope(
      */
     fun <T> vizChannel(
         capacity: Int = Channel.RENDEZVOUS,
-        name: String? = null
+        name: String? = null,
     ): InstrumentedChannel<T> {
         val channelId = "channel-${session.nextSeq()}"
         val channelType = channelTypeFromCapacity(capacity)
@@ -780,7 +798,7 @@ class VizScope(
             channelId = channelId,
             name = name,
             capacity = capacity,
-            channelType = channelType
+            channelType = channelType,
         )
     }
 }

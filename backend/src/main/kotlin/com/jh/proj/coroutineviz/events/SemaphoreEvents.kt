@@ -27,7 +27,7 @@ data class SemaphoreCreated(
     override val tsNanos: Long,
     override val semaphoreId: String,
     override val semaphoreLabel: String?,
-    val totalPermits: Int
+    val totalPermits: Int,
 ) : SemaphoreEvent {
     override val kind: String get() = "SemaphoreCreated"
 }
@@ -46,7 +46,8 @@ data class SemaphoreAcquireRequested(
     val requesterId: String,
     val requesterLabel: String?,
     val availablePermits: Int,
-    val permitsRequested: Int        // Usually 1, but can be more
+    // Usually 1, but can be more
+    val permitsRequested: Int,
 ) : SemaphoreEvent {
     override val kind: String get() = "SemaphoreAcquireRequested"
 }
@@ -65,7 +66,7 @@ data class SemaphorePermitAcquired(
     val acquirerId: String,
     val acquirerLabel: String?,
     val remainingPermits: Int,
-    val waitDurationNanos: Long
+    val waitDurationNanos: Long,
 ) : SemaphoreEvent {
     override val kind: String get() = "SemaphorePermitAcquired"
 }
@@ -84,7 +85,7 @@ data class SemaphorePermitReleased(
     val releaserId: String,
     val releaserLabel: String?,
     val newAvailablePermits: Int,
-    val holdDurationNanos: Long
+    val holdDurationNanos: Long,
 ) : SemaphoreEvent {
     override val kind: String get() = "SemaphorePermitReleased"
 }
@@ -103,7 +104,7 @@ data class SemaphoreTryAcquireFailed(
     val requesterId: String,
     val requesterLabel: String?,
     val availablePermits: Int,
-    val permitsRequested: Int
+    val permitsRequested: Int,
 ) : SemaphoreEvent {
     override val kind: String get() = "SemaphoreTryAcquireFailed"
 }
@@ -124,8 +125,7 @@ data class SemaphoreStateChanged(
     val activeHolders: List<String>,
     val activeHolderLabels: List<String?>,
     val waitingCoroutines: List<String>,
-    val waitingLabels: List<String?>
+    val waitingLabels: List<String?>,
 ) : SemaphoreEvent {
     override val kind: String get() = "SemaphoreStateChanged"
 }
-

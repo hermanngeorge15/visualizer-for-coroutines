@@ -21,6 +21,7 @@ data class ThreadEvent(
     val threadId: Long,
     val threadName: String,
     val timestamp: Long,
-    val eventType: String,  // "ASSIGNED", "RELEASED"
-    val dispatcherName: String? = null
+    // "ASSIGNED", "RELEASED"
+    val eventType: String,
+    val dispatcherName: String? = null,
 )

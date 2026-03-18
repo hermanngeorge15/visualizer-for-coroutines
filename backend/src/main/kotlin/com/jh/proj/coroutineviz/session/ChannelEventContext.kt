@@ -20,11 +20,13 @@ data class ChannelEventContext(
     val channelId: String,
     val name: String? = null,
     val capacity: Int,
-    val channelType: String  // RENDEZVOUS, BUFFERED, CONFLATED, UNLIMITED
+    // RENDEZVOUS, BUFFERED, CONFLATED, UNLIMITED
+    val channelType: String,
 ) {
     val sessionId: String get() = session.sessionId
 
     fun nextSeq(): Long = session.nextSeq()
+
     fun timestamp(): Long = System.nanoTime()
 }
 
@@ -32,25 +34,25 @@ data class ChannelEventContext(
 // Channel Lifecycle Events
 // ============================================================================
 
-fun ChannelEventContext.channelCreated(): ChannelCreated = ChannelCreated(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    name = name,
-    capacity = capacity,
-    channelType = channelType
-)
+fun ChannelEventContext.channelCreated(): ChannelCreated =
+    ChannelCreated(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        name = name,
+        capacity = capacity,
+        channelType = channelType,
+    )
 
-fun ChannelEventContext.channelClosed(
-    cause: String? = null
-): ChannelClosed = ChannelClosed(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    cause = cause
-)
+fun ChannelEventContext.channelClosed(cause: String? = null): ChannelClosed =
+    ChannelClosed(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        cause = cause,
+    )
 
 // ============================================================================
 // Channel Send Events
@@ -58,88 +60,89 @@ fun ChannelEventContext.channelClosed(
 
 fun ChannelEventContext.channelSendStarted(
     coroutineId: String,
-    valueDescription: String
-): ChannelSendStarted = ChannelSendStarted(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    coroutineId = coroutineId,
-    valueDescription = valueDescription
-)
+    valueDescription: String,
+): ChannelSendStarted =
+    ChannelSendStarted(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        coroutineId = coroutineId,
+        valueDescription = valueDescription,
+    )
 
 fun ChannelEventContext.channelSendCompleted(
     coroutineId: String,
-    valueDescription: String
-): ChannelSendCompleted = ChannelSendCompleted(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    coroutineId = coroutineId,
-    valueDescription = valueDescription
-)
+    valueDescription: String,
+): ChannelSendCompleted =
+    ChannelSendCompleted(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        coroutineId = coroutineId,
+        valueDescription = valueDescription,
+    )
 
 fun ChannelEventContext.channelSendSuspended(
     coroutineId: String,
-    bufferSize: Int
-): ChannelSendSuspended = ChannelSendSuspended(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    coroutineId = coroutineId,
-    bufferSize = bufferSize,
-    capacity = capacity
-)
+    bufferSize: Int,
+): ChannelSendSuspended =
+    ChannelSendSuspended(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        coroutineId = coroutineId,
+        bufferSize = bufferSize,
+        capacity = capacity,
+    )
 
 // ============================================================================
 // Channel Receive Events
 // ============================================================================
 
-fun ChannelEventContext.channelReceiveStarted(
-    coroutineId: String
-): ChannelReceiveStarted = ChannelReceiveStarted(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    coroutineId = coroutineId
-)
+fun ChannelEventContext.channelReceiveStarted(coroutineId: String): ChannelReceiveStarted =
+    ChannelReceiveStarted(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        coroutineId = coroutineId,
+    )
 
 fun ChannelEventContext.channelReceiveCompleted(
     coroutineId: String,
-    valueDescription: String
-): ChannelReceiveCompleted = ChannelReceiveCompleted(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    coroutineId = coroutineId,
-    valueDescription = valueDescription
-)
+    valueDescription: String,
+): ChannelReceiveCompleted =
+    ChannelReceiveCompleted(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        coroutineId = coroutineId,
+        valueDescription = valueDescription,
+    )
 
-fun ChannelEventContext.channelReceiveSuspended(
-    coroutineId: String
-): ChannelReceiveSuspended = ChannelReceiveSuspended(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    coroutineId = coroutineId
-)
+fun ChannelEventContext.channelReceiveSuspended(coroutineId: String): ChannelReceiveSuspended =
+    ChannelReceiveSuspended(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        coroutineId = coroutineId,
+    )
 
 // ============================================================================
 // Channel Buffer Events
 // ============================================================================
 
-fun ChannelEventContext.channelBufferStateChanged(
-    currentSize: Int
-): ChannelBufferStateChanged = ChannelBufferStateChanged(
-    sessionId = sessionId,
-    seq = nextSeq(),
-    tsNanos = timestamp(),
-    channelId = channelId,
-    currentSize = currentSize,
-    capacity = capacity
-)
+fun ChannelEventContext.channelBufferStateChanged(currentSize: Int): ChannelBufferStateChanged =
+    ChannelBufferStateChanged(
+        sessionId = sessionId,
+        seq = nextSeq(),
+        tsNanos = timestamp(),
+        channelId = channelId,
+        currentSize = currentSize,
+        capacity = capacity,
+    )

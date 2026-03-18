@@ -20,8 +20,7 @@ data class FlowValueTransformed(
     val outputType: String,
     val sequenceNumber: Int,
     val coroutineId: String? = null,
-    val collectorId: String? = null
+    val collectorId: String? = null,
 ) : VizEvent {
     override val kind = "FlowValueTransformed"
 }
-

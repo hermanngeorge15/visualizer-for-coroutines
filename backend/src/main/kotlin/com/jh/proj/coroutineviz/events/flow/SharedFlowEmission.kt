@@ -15,11 +15,11 @@ data class SharedFlowEmission(
     val valuePreview: String,
     val valueType: String,
     val subscriberCount: Int,
-    val replayCache: Int,  // Current replay cache size
+    // Current replay cache size
+    val replayCache: Int,
     val extraBufferCapacity: Int,
     val coroutineId: String? = null,
-    val label: String? = null
+    val label: String? = null,
 ) : VizEvent {
     override val kind = "SharedFlowEmission"
 }
-

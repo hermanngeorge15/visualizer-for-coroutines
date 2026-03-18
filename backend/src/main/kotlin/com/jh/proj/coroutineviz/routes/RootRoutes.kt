@@ -20,4 +20,3 @@ fun Route.registerRootRoutes() {
         send(ServerSentEvent("world"))
     }
 }
-

@@ -24,8 +24,13 @@ class EventRecorder {
     }
 
     fun forCoroutine(coroutineId: String): List<VizEvent> = eventsByCoroutine.getOrElse(coroutineId, { emptyList() })
+
     fun ofKind(kind: String): List<VizEvent> = eventsByKind.getOrElse(kind, { emptyList() })
-    fun inTimeRange(startTime: Long, endTime: Long): List<VizEvent> {
+
+    fun inTimeRange(
+        startTime: Long,
+        endTime: Long,
+    ): List<VizEvent> {
         return events.filter { it.tsNanos in startTime..endTime }
     }
 }

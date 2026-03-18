@@ -2,7 +2,6 @@ package com.jh.proj.coroutineviz.checksystem
 
 import com.jh.proj.coroutineviz.events.CoroutineEvent
 import com.jh.proj.coroutineviz.events.VizEvent
-import com.jh.proj.coroutineviz.events.coroutine.CoroutineCreated
 import com.jh.proj.coroutineviz.events.coroutine.CoroutineResumed
 import com.jh.proj.coroutineviz.events.coroutine.CoroutineSuspended
 import kotlinx.serialization.Serializable
@@ -20,7 +19,7 @@ import kotlinx.serialization.Serializable
 data class TimingReport(
     val coroutineDurations: Map<String, Long>,
     val suspensionDurations: Map<String, List<Long>>,
-    val totalDuration: Long
+    val totalDuration: Long,
 )
 
 /**
@@ -32,7 +31,6 @@ data class TimingReport(
  * - Overall event stream duration
  */
 object TimingAnalyzer {
-
     /**
      * Analyze the given events and produce a [TimingReport].
      *
@@ -79,17 +77,18 @@ object TimingAnalyzer {
         }
 
         // Total stream duration
-        val totalDuration = if (events.size >= 2) {
-            val allTs = events.map { it.tsNanos }
-            allTs.max() - allTs.min()
-        } else {
-            0L
-        }
+        val totalDuration =
+            if (events.size >= 2) {
+                val allTs = events.map { it.tsNanos }
+                allTs.max() - allTs.min()
+            } else {
+                0L
+            }
 
         return TimingReport(
             coroutineDurations = coroutineDurations,
             suspensionDurations = suspensionDurations,
-            totalDuration = totalDuration
+            totalDuration = totalDuration,
         )
     }
 }

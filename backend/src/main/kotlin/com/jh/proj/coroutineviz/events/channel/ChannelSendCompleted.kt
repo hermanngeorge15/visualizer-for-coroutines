@@ -19,7 +19,7 @@ data class ChannelSendCompleted(
     override val tsNanos: Long,
     val channelId: String,
     val coroutineId: String,
-    val valueDescription: String
+    val valueDescription: String,
 ) : VizEvent {
     override val kind: String get() = "ChannelSendCompleted"
 }

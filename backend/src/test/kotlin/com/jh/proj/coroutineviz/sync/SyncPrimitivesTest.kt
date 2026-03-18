@@ -14,14 +14,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for Mutex and Semaphore synchronization primitives
  */
 class SyncPrimitivesTest {
-
     private lateinit var session: VizSession
     private lateinit var recorder: EventRecorder
 
@@ -29,7 +28,7 @@ class SyncPrimitivesTest {
     fun setup() {
         session = VizSession("test-session-${System.currentTimeMillis()}")
         recorder = EventRecorder()
-        
+
         // Subscribe recorder to session events
         session.sessionScope.launch {
             session.eventBus.stream().collect { event ->
@@ -44,103 +43,111 @@ class SyncPrimitivesTest {
 
     @Test
     @DisplayName("VizMutex - Basic lock/unlock emits correct events")
-    fun `mutex basic lock unlock`() = runTest {
-        val mutex = VizMutex(session, "test-mutex")
+    fun `mutex basic lock unlock`() =
+        runTest {
+            val mutex = VizMutex(session, "test-mutex")
 
-        // Verify creation event
-        val createdEvents = session.store.all().filterIsInstance<MutexCreated>()
-        assertEquals(1, createdEvents.size)
-        assertEquals("test-mutex", createdEvents.first().mutexLabel)
+            // Verify creation event
+            val createdEvents = session.store.all().filterIsInstance<MutexCreated>()
+            assertEquals(1, createdEvents.size)
+            assertEquals("test-mutex", createdEvents.first().mutexLabel)
 
-        // Lock
-        mutex.lock()
-        assertTrue(mutex.isLocked)
+            // Lock
+            mutex.lock()
+            assertTrue(mutex.isLocked)
 
-        // Unlock
-        mutex.unlock()
-        assertFalse(mutex.isLocked)
+            // Unlock
+            mutex.unlock()
+            assertFalse(mutex.isLocked)
 
-        // Verify events
-        val allEvents = session.store.all()
-        assertTrue(allEvents.any { it is MutexLockAcquired })
-        assertTrue(allEvents.any { it is MutexUnlocked })
-    }
+            // Verify events
+            val allEvents = session.store.all()
+            assertTrue(allEvents.any { it is MutexLockAcquired })
+            assertTrue(allEvents.any { it is MutexUnlocked })
+        }
 
     @Test
     @DisplayName("VizMutex - withLock ensures proper lock/unlock pairing")
-    fun `mutex withLock pattern`() = runTest {
-        val mutex = VizMutex(session, "withlock-mutex")
-        var counter = 0
+    fun `mutex withLock pattern`() =
+        runTest {
+            val mutex = VizMutex(session, "withlock-mutex")
+            var counter = 0
 
-        mutex.withLock {
-            counter++
-            delay(10)
+            mutex.withLock {
+                counter++
+                delay(10)
+            }
+
+            assertEquals(1, counter)
+            assertFalse(mutex.isLocked)
+
+            // Verify balanced events
+            val acquires = session.store.all().filterIsInstance<MutexLockAcquired>()
+            val releases = session.store.all().filterIsInstance<MutexUnlocked>()
+            assertEquals(acquires.size, releases.size)
         }
-
-        assertEquals(1, counter)
-        assertFalse(mutex.isLocked)
-
-        // Verify balanced events
-        val acquires = session.store.all().filterIsInstance<MutexLockAcquired>()
-        val releases = session.store.all().filterIsInstance<MutexUnlocked>()
-        assertEquals(acquires.size, releases.size)
-    }
 
     @Test
     @DisplayName("VizMutex - tryLock returns false when locked")
-    fun `mutex tryLock behavior`() = runTest {
-        val mutex = VizMutex(session, "trylock-mutex")
+    fun `mutex tryLock behavior`() =
+        runTest {
+            val mutex = VizMutex(session, "trylock-mutex")
 
-        // First tryLock succeeds
-        val first = mutex.tryLock()
-        assertTrue(first)
-        assertTrue(mutex.isLocked)
+            // First tryLock succeeds
+            val first = mutex.tryLock()
+            assertTrue(first)
+            assertTrue(mutex.isLocked)
 
-        // Second tryLock fails
-        val second = mutex.tryLock()
-        assertFalse(second)
+            // Second tryLock fails
+            val second = mutex.tryLock()
+            assertFalse(second)
 
-        // Verify tryLock failed event
-        val failedEvents = session.store.all().filterIsInstance<MutexTryLockFailed>()
-        assertEquals(1, failedEvents.size)
+            // Verify tryLock failed event
+            val failedEvents = session.store.all().filterIsInstance<MutexTryLockFailed>()
+            assertEquals(1, failedEvents.size)
 
-        mutex.unlock()
-    }
+            mutex.unlock()
+        }
 
     @Test
     @DisplayName("VizMutex - Queue position tracked correctly")
-    fun `mutex queue tracking`() = runBlocking {
-        val mutex = VizMutex(session, "queue-mutex")
-        val scope = VizScope(session)
+    fun `mutex queue tracking`() =
+        runBlocking {
+            val mutex = VizMutex(session, "queue-mutex")
+            val scope = VizScope(session)
 
-        // First coroutine acquires lock
-        val job1 = scope.vizLaunch("holder") {
-            mutex.withLock {
-                vizDelay(500)
-            }
+            // First coroutine acquires lock
+            val job1 =
+                scope.vizLaunch("holder") {
+                    mutex.withLock {
+                        vizDelay(500)
+                    }
+                }
+
+            // Ensure holder has lock
+            delay(50)
+
+            // Second coroutine waits
+            val job2 =
+                scope.vizLaunch("waiter-1") {
+                    mutex.withLock {
+                        vizDelay(10)
+                    }
+                }
+
+            // Give waiter-1 time to reach lock() and emit MutexLockRequested
+            delay(50)
+
+            // Verify queue position in request event
+            val requests = session.store.all().filterIsInstance<MutexLockRequested>()
+            val waiterRequest = requests.find { it.requesterLabel == "waiter-1" }
+            assertNotNull(waiterRequest)
+            assertEquals(1, waiterRequest?.queuePosition)
+            assertTrue(waiterRequest?.isLocked == true)
+
+            job1.join()
+            job2.join()
         }
-
-        delay(50) // Ensure holder has lock
-
-        // Second coroutine waits
-        val job2 = scope.vizLaunch("waiter-1") {
-            mutex.withLock {
-                vizDelay(10)
-            }
-        }
-
-        delay(50) // Give waiter-1 time to reach lock() and emit MutexLockRequested
-
-        // Verify queue position in request event
-        val requests = session.store.all().filterIsInstance<MutexLockRequested>()
-        val waiterRequest = requests.find { it.requesterLabel == "waiter-1" }
-        assertNotNull(waiterRequest)
-        assertEquals(1, waiterRequest?.queuePosition)
-        assertTrue(waiterRequest?.isLocked == true)
-
-        job1.join()
-        job2.join()
-    }
 
     // ========================================================================
     // SEMAPHORE TESTS
@@ -148,97 +155,102 @@ class SyncPrimitivesTest {
 
     @Test
     @DisplayName("VizSemaphore - Basic acquire/release emits correct events")
-    fun `semaphore basic acquire release`() = runTest {
-        val semaphore = VizSemaphore(session, permits = 3, label = "test-semaphore")
+    fun `semaphore basic acquire release`() =
+        runTest {
+            val semaphore = VizSemaphore(session, permits = 3, label = "test-semaphore")
 
-        // Verify creation event
-        val createdEvents = session.store.all().filterIsInstance<SemaphoreCreated>()
-        assertEquals(1, createdEvents.size)
-        assertEquals(3, createdEvents.first().totalPermits)
+            // Verify creation event
+            val createdEvents = session.store.all().filterIsInstance<SemaphoreCreated>()
+            assertEquals(1, createdEvents.size)
+            assertEquals(3, createdEvents.first().totalPermits)
 
-        // Acquire
-        semaphore.acquire()
-        assertEquals(2, semaphore.availablePermits)
+            // Acquire
+            semaphore.acquire()
+            assertEquals(2, semaphore.availablePermits)
 
-        // Release
-        semaphore.release()
-        assertEquals(3, semaphore.availablePermits)
+            // Release
+            semaphore.release()
+            assertEquals(3, semaphore.availablePermits)
 
-        // Verify events
-        assertTrue(session.store.all().any { it is SemaphorePermitAcquired })
-        assertTrue(session.store.all().any { it is SemaphorePermitReleased })
-    }
+            // Verify events
+            assertTrue(session.store.all().any { it is SemaphorePermitAcquired })
+            assertTrue(session.store.all().any { it is SemaphorePermitReleased })
+        }
 
     @Test
     @DisplayName("VizSemaphore - Never exceeds permit limit")
-    fun `semaphore permit bounds`() = runBlocking {
-        val semaphore = VizSemaphore(session, permits = 2, label = "bounded-semaphore")
-        val scope = VizScope(session)
-        val concurrentCount = java.util.concurrent.atomic.AtomicInteger(0)
-        val maxConcurrent = java.util.concurrent.atomic.AtomicInteger(0)
+    fun `semaphore permit bounds`() =
+        runBlocking {
+            val semaphore = VizSemaphore(session, permits = 2, label = "bounded-semaphore")
+            val scope = VizScope(session)
+            val concurrentCount = java.util.concurrent.atomic.AtomicInteger(0)
+            val maxConcurrent = java.util.concurrent.atomic.AtomicInteger(0)
 
-        // Launch multiple coroutines
-        val jobs = (1..5).map { i ->
-            scope.vizLaunch("worker-$i") {
-                semaphore.withPermit {
-                    // Track actual concurrency using an atomic counter
-                    val current = concurrentCount.incrementAndGet()
-                    maxConcurrent.updateAndGet { max -> maxOf(max, current) }
-                    vizDelay(50)
-                    concurrentCount.decrementAndGet()
+            // Launch multiple coroutines
+            val jobs =
+                (1..5).map { i ->
+                    scope.vizLaunch("worker-$i") {
+                        semaphore.withPermit {
+                            // Track actual concurrency using an atomic counter
+                            val current = concurrentCount.incrementAndGet()
+                            maxConcurrent.updateAndGet { max -> maxOf(max, current) }
+                            vizDelay(50)
+                            concurrentCount.decrementAndGet()
+                        }
+                    }
                 }
-            }
+
+            jobs.forEach { it.join() }
+
+            // Verify at most 2 were active simultaneously (delegate semaphore enforces this)
+            assertTrue(maxConcurrent.get() <= 2, "Max concurrent was ${maxConcurrent.get()}, expected <= 2")
+            // Verify all permits returned
+            assertEquals(2, semaphore.availablePermits)
         }
-
-        jobs.forEach { it.join() }
-
-        // Verify at most 2 were active simultaneously (delegate semaphore enforces this)
-        assertTrue(maxConcurrent.get() <= 2, "Max concurrent was ${maxConcurrent.get()}, expected <= 2")
-        // Verify all permits returned
-        assertEquals(2, semaphore.availablePermits)
-    }
 
     @Test
     @DisplayName("VizSemaphore - Utilization calculated correctly")
-    fun `semaphore utilization`() = runTest {
-        val semaphore = VizSemaphore(session, permits = 4, label = "util-semaphore")
+    fun `semaphore utilization`() =
+        runTest {
+            val semaphore = VizSemaphore(session, permits = 4, label = "util-semaphore")
 
-        assertEquals(0.0, semaphore.getUtilization())
+            assertEquals(0.0, semaphore.getUtilization())
 
-        semaphore.acquire()
-        assertEquals(0.25, semaphore.getUtilization())
+            semaphore.acquire()
+            assertEquals(0.25, semaphore.getUtilization())
 
-        semaphore.acquire()
-        assertEquals(0.5, semaphore.getUtilization())
+            semaphore.acquire()
+            assertEquals(0.5, semaphore.getUtilization())
 
-        semaphore.acquire()
-        assertEquals(0.75, semaphore.getUtilization())
+            semaphore.acquire()
+            assertEquals(0.75, semaphore.getUtilization())
 
-        semaphore.acquire()
-        assertEquals(1.0, semaphore.getUtilization())
+            semaphore.acquire()
+            assertEquals(1.0, semaphore.getUtilization())
 
-        repeat(4) { semaphore.release() }
-        assertEquals(0.0, semaphore.getUtilization())
-    }
+            repeat(4) { semaphore.release() }
+            assertEquals(0.0, semaphore.getUtilization())
+        }
 
     @Test
     @DisplayName("VizSemaphore - tryAcquire returns false when no permits")
-    fun `semaphore tryAcquire behavior`() = runTest {
-        val semaphore = VizSemaphore(session, permits = 1, label = "tryacquire-semaphore")
+    fun `semaphore tryAcquire behavior`() =
+        runTest {
+            val semaphore = VizSemaphore(session, permits = 1, label = "tryacquire-semaphore")
 
-        // First succeeds
-        assertTrue(semaphore.tryAcquire())
-        assertEquals(0, semaphore.availablePermits)
+            // First succeeds
+            assertTrue(semaphore.tryAcquire())
+            assertEquals(0, semaphore.availablePermits)
 
-        // Second fails
-        assertFalse(semaphore.tryAcquire())
+            // Second fails
+            assertFalse(semaphore.tryAcquire())
 
-        // Verify failed event
-        val failedEvents = session.store.all().filterIsInstance<SemaphoreTryAcquireFailed>()
-        assertEquals(1, failedEvents.size)
+            // Verify failed event
+            val failedEvents = session.store.all().filterIsInstance<SemaphoreTryAcquireFailed>()
+            assertEquals(1, failedEvents.size)
 
-        semaphore.release()
-    }
+            semaphore.release()
+        }
 
     // ========================================================================
     // VALIDATOR TESTS
@@ -281,70 +293,77 @@ class SyncPrimitivesTest {
 
     @Test
     @DisplayName("Real-world: Thread-safe counter using Mutex")
-    fun `real world thread safe counter`() = runTest {
-        val scope = VizScope(session)
-        val mutex = VizMutex(session, "counter-lock")
-        var counter = 0
+    fun `real world thread safe counter`() =
+        runTest {
+            val scope = VizScope(session)
+            val mutex = VizMutex(session, "counter-lock")
+            var counter = 0
 
-        // Launch multiple workers
-        val jobs = (1..5).map { i ->
-            scope.vizLaunch("worker-$i") {
-                repeat(10) {
-                    mutex.withLock {
-                        val current = counter
-                        delay(1)
-                        counter = current + 1
+            // Launch multiple workers
+            val jobs =
+                (1..5).map { i ->
+                    scope.vizLaunch("worker-$i") {
+                        repeat(10) {
+                            mutex.withLock {
+                                val current = counter
+                                delay(1)
+                                counter = current + 1
+                            }
+                        }
                     }
                 }
-            }
+
+            jobs.forEach { it.join() }
+
+            // Counter should be exactly 50 (5 workers * 10 increments)
+            assertEquals(50, counter)
         }
-
-        jobs.forEach { it.join() }
-
-        // Counter should be exactly 50 (5 workers * 10 increments)
-        assertEquals(50, counter)
-    }
 
     @Test
     @DisplayName("Real-world: Connection pool using Semaphore")
-    fun `real world connection pool`() = runTest {
-        val scope = VizScope(session)
-        val connectionPool = VizSemaphore(session, permits = 3, label = "db-connections")
-        var maxConcurrent = 0
-        var currentConcurrent = 0
-        val lock = VizMutex(session, "tracking-lock")
+    fun `real world connection pool`() =
+        runTest {
+            val scope = VizScope(session)
+            val connectionPool = VizSemaphore(session, permits = 3, label = "db-connections")
+            var maxConcurrent = 0
+            var currentConcurrent = 0
+            val lock = VizMutex(session, "tracking-lock")
 
-        val jobs = (1..10).map { i ->
-            scope.vizLaunch("query-$i") {
-                connectionPool.withPermit {
-                    lock.withLock {
-                        currentConcurrent++
-                        if (currentConcurrent > maxConcurrent) {
-                            maxConcurrent = currentConcurrent
+            val jobs =
+                (1..10).map { i ->
+                    scope.vizLaunch("query-$i") {
+                        connectionPool.withPermit {
+                            lock.withLock {
+                                currentConcurrent++
+                                if (currentConcurrent > maxConcurrent) {
+                                    maxConcurrent = currentConcurrent
+                                }
+                            }
+
+                            vizDelay((10..50).random().toLong())
+
+                            lock.withLock {
+                                currentConcurrent--
+                            }
                         }
                     }
-                    
-                    vizDelay((10..50).random().toLong())
-                    
-                    lock.withLock {
-                        currentConcurrent--
-                    }
                 }
-            }
+
+            jobs.forEach { it.join() }
+
+            // Max concurrent should never exceed 3
+            assertTrue(maxConcurrent <= 3, "Max concurrent was $maxConcurrent, expected <= 3")
+            assertEquals(3, connectionPool.availablePermits)
         }
-
-        jobs.forEach { it.join() }
-
-        // Max concurrent should never exceed 3
-        assertTrue(maxConcurrent <= 3, "Max concurrent was $maxConcurrent, expected <= 3")
-        assertEquals(3, connectionPool.availablePermits)
-    }
 
     // ========================================================================
     // HELPER METHODS
     // ========================================================================
 
-    private fun createMutexAcquired(mutexId: String, acquirerId: String) = MutexLockAcquired(
+    private fun createMutexAcquired(
+        mutexId: String,
+        acquirerId: String,
+    ) = MutexLockAcquired(
         sessionId = session.sessionId,
         seq = session.nextSeq(),
         tsNanos = System.nanoTime(),
@@ -352,10 +371,13 @@ class SyncPrimitivesTest {
         mutexLabel = null,
         acquirerId = acquirerId,
         acquirerLabel = null,
-        waitDurationNanos = 0
+        waitDurationNanos = 0,
     )
 
-    private fun createMutexUnlocked(mutexId: String, releaserId: String) = MutexUnlocked(
+    private fun createMutexUnlocked(
+        mutexId: String,
+        releaserId: String,
+    ) = MutexUnlocked(
         sessionId = session.sessionId,
         seq = session.nextSeq(),
         tsNanos = System.nanoTime(),
@@ -364,14 +386,14 @@ class SyncPrimitivesTest {
         releaserId = releaserId,
         releaserLabel = null,
         nextWaiterId = null,
-        holdDurationNanos = 100
+        holdDurationNanos = 100,
     )
 
     private fun createSemaphoreState(
         semaphoreId: String,
         available: Int,
         total: Int,
-        holders: Int
+        holders: Int,
     ) = SemaphoreStateChanged(
         sessionId = session.sessionId,
         seq = session.nextSeq(),
@@ -383,7 +405,6 @@ class SyncPrimitivesTest {
         activeHolders = (1..holders).map { "holder-$it" },
         activeHolderLabels = (1..holders).map { null },
         waitingCoroutines = emptyList(),
-        waitingLabels = emptyList()
+        waitingLabels = emptyList(),
     )
 }
-

@@ -38,9 +38,8 @@ class InstrumentedChannel<T>(
     val channelId: String,
     val name: String? = null,
     private val capacity: Int,
-    private val channelType: String
+    private val channelType: String,
 ) : Channel<T> {
-
     private val bufferCount = AtomicInteger(0)
 
     private val ctx: ChannelEventContext by lazy {
@@ -49,13 +48,13 @@ class InstrumentedChannel<T>(
             channelId = channelId,
             name = name,
             capacity = capacity,
-            channelType = channelType
+            channelType = channelType,
         )
     }
 
     init {
         session.send(
-            ctx.channelCreated()
+            ctx.channelCreated(),
         )
         logger.debug("Channel created: channelId=$channelId, type=$channelType, capacity=$capacity")
     }
@@ -86,11 +85,12 @@ class InstrumentedChannel<T>(
         val result = delegate.trySend(element)
         if (result.isSuccess) {
             val currentSize = bufferCount.incrementAndGet()
-            val coroutineId = runCatching {
-                kotlinx.coroutines.runBlocking {
-                    currentCoroutineContext()[VizCoroutineElement]?.coroutineId
-                }
-            }.getOrNull() ?: "unknown"
+            val coroutineId =
+                runCatching {
+                    kotlinx.coroutines.runBlocking {
+                        currentCoroutineContext()[VizCoroutineElement]?.coroutineId
+                    }
+                }.getOrNull() ?: "unknown"
             val valueDesc = element?.toString()?.take(200) ?: "null"
 
             session.send(ctx.channelSendStarted(coroutineId, valueDesc))
@@ -147,11 +147,12 @@ class InstrumentedChannel<T>(
         val result = delegate.tryReceive()
         if (result.isSuccess) {
             val currentSize = bufferCount.decrementAndGet().coerceAtLeast(0)
-            val coroutineId = runCatching {
-                kotlinx.coroutines.runBlocking {
-                    currentCoroutineContext()[VizCoroutineElement]?.coroutineId
-                }
-            }.getOrNull() ?: "unknown"
+            val coroutineId =
+                runCatching {
+                    kotlinx.coroutines.runBlocking {
+                        currentCoroutineContext()[VizCoroutineElement]?.coroutineId
+                    }
+                }.getOrNull() ?: "unknown"
 
             session.send(ctx.channelReceiveStarted(coroutineId))
             session.send(ctx.channelBufferStateChanged(currentSize))
@@ -169,11 +170,12 @@ class InstrumentedChannel<T>(
 
     @Deprecated("Deprecated in ReceiveChannel", replaceWith = ReplaceWith("cancel(CancellationException(cause))"))
     override fun cancel(cause: Throwable?): Boolean {
-        val cancellationException = when (cause) {
-            null -> null
-            is CancellationException -> cause
-            else -> CancellationException(cause.message, cause)
-        }
+        val cancellationException =
+            when (cause) {
+                null -> null
+                is CancellationException -> cause
+                else -> CancellationException(cause.message, cause)
+            }
         delegate.cancel(cancellationException)
         session.send(ctx.channelClosed(cause?.message ?: "Cancelled"))
         logger.debug("Channel cancelled (deprecated): channelId=$channelId, cause=${cause?.message}")
@@ -205,8 +207,8 @@ class InstrumentedChannel<T>(
                         tsNanos = System.nanoTime(),
                         channelId = channelId,
                         coroutineId = "iterator",
-                        valueDescription = valueDesc
-                    )
+                        valueDescription = valueDesc,
+                    ),
                 )
                 return value
             }
@@ -239,10 +241,11 @@ class InstrumentedChannel<T>(
 /**
  * Determine the channel type string from the capacity constant.
  */
-fun channelTypeFromCapacity(capacity: Int): String = when (capacity) {
-    Channel.RENDEZVOUS -> "RENDEZVOUS"
-    Channel.CONFLATED -> "CONFLATED"
-    Channel.UNLIMITED -> "UNLIMITED"
-    Channel.BUFFERED -> "BUFFERED"
-    else -> "BUFFERED"
-}
+fun channelTypeFromCapacity(capacity: Int): String =
+    when (capacity) {
+        Channel.RENDEZVOUS -> "RENDEZVOUS"
+        Channel.CONFLATED -> "CONFLATED"
+        Channel.UNLIMITED -> "UNLIMITED"
+        Channel.BUFFERED -> "BUFFERED"
+        else -> "BUFFERED"
+    }

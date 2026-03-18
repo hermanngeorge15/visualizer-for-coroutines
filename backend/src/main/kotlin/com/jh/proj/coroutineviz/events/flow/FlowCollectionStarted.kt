@@ -25,7 +25,7 @@ data class FlowCollectionStarted(
     val coroutineId: String,
     val flowId: String,
     val collectorId: String,
-    val label: String? = null
+    val label: String? = null,
 ) : VizEvent {
     override val kind: String get() = "FlowCollectionStarted"
 }

@@ -16,5 +16,5 @@ import kotlinx.serialization.Serializable
 data class SessionInfo(
     val sessionId: String,
     val coroutineCount: Int,
-    val eventCount: Int
+    val eventCount: Int,
 )

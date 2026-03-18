@@ -15,10 +15,10 @@ data class StateFlowValueChanged(
     val oldValuePreview: String,
     val newValuePreview: String,
     val valueType: String,
-    val subscriberCount: Int,  // Number of active collectors
+    // Number of active collectors
+    val subscriberCount: Int,
     val coroutineId: String? = null,
-    val label: String? = null
+    val label: String? = null,
 ) : VizEvent {
     override val kind = "StateFlowValueChanged"
 }
-

@@ -33,10 +33,11 @@ import org.slf4j.LoggerFactory
 class EventBus {
     private val logger = LoggerFactory.getLogger(EventBus::class.java)
 
-    private val flow = MutableSharedFlow<VizEvent>(
-        extraBufferCapacity = 10_000,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
+    private val flow =
+        MutableSharedFlow<VizEvent>(
+            extraBufferCapacity = 10_000,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
 
     /**
      * Non-suspending event emission.

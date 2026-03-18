@@ -8,9 +8,7 @@ import com.jh.proj.coroutineviz.events.VizEvent
  *
  * Provides convenient, type-safe ways to select subsets of events
  * by type, coroutine ID, or sequence number range.
- */
-
-/**
+ *
  * Filter events to only those of a specific type [T].
  *
  * Usage: `events.ofType<CoroutineCreated>()`
@@ -33,6 +31,9 @@ fun List<VizEvent>.forCoroutine(id: String): List<VizEvent> {
 /**
  * Filter events to only those within a sequence number range (inclusive).
  */
-fun List<VizEvent>.inSequenceRange(from: Long, to: Long): List<VizEvent> {
+fun List<VizEvent>.inSequenceRange(
+    from: Long,
+    to: Long,
+): List<VizEvent> {
     return filter { it.seq in from..to }
 }

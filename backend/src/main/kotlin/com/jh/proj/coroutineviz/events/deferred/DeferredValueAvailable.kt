@@ -24,7 +24,7 @@ data class DeferredValueAvailable(
     override val parentCoroutineId: String?,
     override val scopeId: String,
     override val label: String?,
-    val deferredId: String
+    val deferredId: String,
 ) : CoroutineEvent {
     override val kind: String get() = "DeferredValueAvailable"
 }

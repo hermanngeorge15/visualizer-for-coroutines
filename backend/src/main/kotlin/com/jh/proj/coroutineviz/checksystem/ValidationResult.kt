@@ -18,7 +18,7 @@ sealed class ValidationResult {
     @SerialName("Pass")
     data class Pass(
         override val ruleName: String,
-        override val message: String
+        override val message: String,
     ) : ValidationResult()
 
     @Serializable
@@ -26,6 +26,6 @@ sealed class ValidationResult {
     data class Fail(
         override val ruleName: String,
         override val message: String,
-        val details: String
+        val details: String,
     ) : ValidationResult()
 }

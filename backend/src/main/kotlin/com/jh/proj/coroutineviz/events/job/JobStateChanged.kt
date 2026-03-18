@@ -30,7 +30,7 @@ data class JobStateChanged(
     val isActive: Boolean,
     val isCompleted: Boolean,
     val isCancelled: Boolean,
-    val childrenCount: Int = 0
+    val childrenCount: Int = 0,
 ) : CoroutineEvent {
     override val kind: String get() = "JobStateChanged"
 }

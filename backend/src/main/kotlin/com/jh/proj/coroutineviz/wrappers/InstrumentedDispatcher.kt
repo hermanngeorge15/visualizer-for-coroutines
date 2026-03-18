@@ -43,10 +43,12 @@ class InstrumentedDispatcher(
     private val delegate: CoroutineDispatcher,
     private val session: VizSession,
     val dispatcherId: String,
-    val dispatcherName: String
+    val dispatcherName: String,
 ) : CoroutineDispatcher() {
-
-    override fun dispatch(context: CoroutineContext, block: Runnable) {
+    override fun dispatch(
+        context: CoroutineContext,
+        block: Runnable,
+    ) {
         // Get coroutine info from context
         val vizElement = context[VizCoroutineElement]
 
@@ -64,35 +66,36 @@ class InstrumentedDispatcher(
                     scopeId = vizElement.scopeId,
                     label = vizElement.label,
                     dispatcherId = dispatcherId,
-                    dispatcherName = dispatcherName
-                )
+                    dispatcherName = dispatcherName,
+                ),
             )
         }
 
         // Wrap the Runnable to capture thread assignment
-        val instrumentedBlock = Runnable {
-            if (vizElement != null) {
-                // Emit ThreadAssigned when actually running on thread
-                session.send(
-                    ThreadAssigned(
-                        sessionId = session.sessionId,
-                        seq = session.nextSeq(),
-                        tsNanos = System.nanoTime(),
-                        coroutineId = vizElement.coroutineId,
-                        jobId = vizElement.jobId,
-                        parentCoroutineId = vizElement.parentCoroutineId,
-                        scopeId = vizElement.scopeId,
-                        label = vizElement.label,
-                        threadId = Thread.currentThread().threadId(),
-                        threadName = Thread.currentThread().name,
-                        dispatcherName = dispatcherName
+        val instrumentedBlock =
+            Runnable {
+                if (vizElement != null) {
+                    // Emit ThreadAssigned when actually running on thread
+                    session.send(
+                        ThreadAssigned(
+                            sessionId = session.sessionId,
+                            seq = session.nextSeq(),
+                            tsNanos = System.nanoTime(),
+                            coroutineId = vizElement.coroutineId,
+                            jobId = vizElement.jobId,
+                            parentCoroutineId = vizElement.parentCoroutineId,
+                            scopeId = vizElement.scopeId,
+                            label = vizElement.label,
+                            threadId = Thread.currentThread().threadId(),
+                            threadName = Thread.currentThread().name,
+                            dispatcherName = dispatcherName,
+                        ),
                     )
-                )
-            }
+                }
 
-            // Execute the actual block
-            block.run()
-        }
+                // Execute the actual block
+                block.run()
+            }
 
         // Dispatch to real dispatcher
         delegate.dispatch(context, instrumentedBlock)

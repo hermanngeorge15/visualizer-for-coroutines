@@ -25,8 +25,8 @@ fun Route.registerSessionRoutes() {
             HttpStatusCode.Created,
             mapOf(
                 "sessionId" to session.sessionId,
-                "message" to "Session created successfully"
-            )
+                "message" to "Session created successfully",
+            ),
         )
     }
 
@@ -37,10 +37,11 @@ fun Route.registerSessionRoutes() {
     }
 
     get("/api/sessions/{id}") {
-        val sessionId = call.parameters["id"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
-            return@get
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
+                return@get
+            }
 
         val session = SessionManager.getSession(sessionId)
         if (session == null) {
@@ -48,30 +49,33 @@ fun Route.registerSessionRoutes() {
             return@get
         }
 
-        val snapshot = SessionSnapshotResponse(
-            sessionId = session.sessionId,
-            coroutineCount = session.snapshot.coroutines.size,
-            eventCount = session.store.all().size,
-            coroutines = session.snapshot.coroutines.values.map { node ->
-                CoroutineNodeDto(
-                    id = node.id,
-                    jobId = node.jobId,
-                    parentId = node.parentId,
-                    scopeId = node.scopeId,
-                    label = node.label,
-                    state = node.state.toString()
-                )
-            }
-        )
+        val snapshot =
+            SessionSnapshotResponse(
+                sessionId = session.sessionId,
+                coroutineCount = session.snapshot.coroutines.size,
+                eventCount = session.store.all().size,
+                coroutines =
+                    session.snapshot.coroutines.values.map { node ->
+                        CoroutineNodeDto(
+                            id = node.id,
+                            jobId = node.jobId,
+                            parentId = node.parentId,
+                            scopeId = node.scopeId,
+                            label = node.label,
+                            state = node.state.toString(),
+                        )
+                    },
+            )
 
         call.respond(HttpStatusCode.OK, snapshot)
     }
 
     delete("/api/sessions/{id}") {
-        val sessionId = call.parameters["id"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
-            return@delete
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
+                return@delete
+            }
 
         val success = SessionManager.closeSession(sessionId)
         if (success) {
@@ -82,10 +86,11 @@ fun Route.registerSessionRoutes() {
     }
 
     get("/api/sessions/{id}/events") {
-        val sessionId = call.parameters["id"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
-            return@get
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
+                return@get
+            }
 
         val session = SessionManager.getSession(sessionId)
         if (session == null) {
@@ -98,10 +103,11 @@ fun Route.registerSessionRoutes() {
     }
 
     get("/api/sessions/{id}/hierarchy") {
-        val sessionId = call.parameters["id"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
-            return@get
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
+                return@get
+            }
 
         val session = SessionManager.getSession(sessionId)
         if (session == null) {
@@ -116,10 +122,11 @@ fun Route.registerSessionRoutes() {
     }
 
     get("/api/sessions/{id}/threads") {
-        val sessionId = call.parameters["id"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
-            return@get
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
+                return@get
+            }
 
         val session = SessionManager.getSession(sessionId)
         if (session == null) {
@@ -133,15 +140,17 @@ fun Route.registerSessionRoutes() {
     }
 
     get("/api/sessions/{id}/coroutines/{coroutineId}/timeline") {
-        val sessionId = call.parameters["id"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
-            return@get
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session ID"))
+                return@get
+            }
 
-        val coroutineId = call.parameters["coroutineId"] ?: run {
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing coroutine ID"))
-            return@get
-        }
+        val coroutineId =
+            call.parameters["coroutineId"] ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing coroutine ID"))
+                return@get
+            }
 
         val session = SessionManager.getSession(sessionId)
         if (session == null) {
@@ -159,10 +168,11 @@ fun Route.registerSessionRoutes() {
     }
 
     sse("/api/sessions/{id}/stream") {
-        val sessionId = call.parameters["id"] ?: run {
-            logger.warn("SSE connection attempted without session ID")
-            return@sse
-        }
+        val sessionId =
+            call.parameters["id"] ?: run {
+                logger.warn("SSE connection attempted without session ID")
+                return@sse
+            }
 
         val session = SessionManager.getSession(sessionId)
         if (session == null) {
@@ -170,8 +180,8 @@ fun Route.registerSessionRoutes() {
             send(
                 ServerSentEvent(
                     data = """{"error": "Session not found"}""",
-                    event = "error"
-                )
+                    event = "error",
+                ),
             )
             return@sse
         }
@@ -188,8 +198,8 @@ fun Route.registerSessionRoutes() {
                     ServerSentEvent(
                         data = Json.encodeToString(event),
                         event = event.kind,
-                        id = "${event.sessionId}-${event.seq}"
-                    )
+                        id = "${event.sessionId}-${event.seq}",
+                    ),
                 )
             }
 
@@ -204,8 +214,8 @@ fun Route.registerSessionRoutes() {
                         ServerSentEvent(
                             data = Json.encodeToString(event),
                             event = event.kind,
-                            id = "${event.sessionId}-${event.seq}"
-                        )
+                            id = "${event.sessionId}-${event.seq}",
+                        ),
                     )
                 }
         } catch (e: Exception) {
@@ -215,4 +225,3 @@ fun Route.registerSessionRoutes() {
         }
     }
 }
-

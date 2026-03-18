@@ -37,7 +37,7 @@ fun Application.configureHTTP() {
             }
             logger.info("CORS: added production origin $origin")
         }
-        
+
         // Allow all HTTP methods
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
@@ -45,32 +45,33 @@ fun Application.configureHTTP() {
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Patch)
-        
+
         // Allow common headers
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.Accept)
-        
+
         // Required for SSE (Server-Sent Events)
         allowHeader(HttpHeaders.CacheControl)
         allowHeader(HttpHeaders.Connection)
-        
+
         // Allow credentials (cookies, authorization headers)
         allowCredentials = true
-        
+
         // Set max age for preflight requests cache
         maxAgeInSeconds = 3600
-        
+
         logger.info("CORS configured: allowing localhost:3000 and 127.0.0.1:3000")
     }
-    
+
     install(AsyncApiPlugin) {
-        extension = AsyncApiExtension.builder {
-            info {
-                title("Coroutine Visualizer API")
-                version("1.0.0")
+        extension =
+            AsyncApiExtension.builder {
+                info {
+                    title("Coroutine Visualizer API")
+                    version("1.0.0")
+                }
             }
-        }
     }
     routing {
         swaggerUI(path = "openapi")

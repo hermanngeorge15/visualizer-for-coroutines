@@ -12,14 +12,15 @@ data class FlowValueFiltered(
     override val seq: Long,
     override val tsNanos: Long,
     val flowId: String,
-    val operatorName: String,  // "filter", "filterNot", "filterIsInstance", "distinctUntilChanged"
+    // "filter", "filterNot", "filterIsInstance", "distinctUntilChanged"
+    val operatorName: String,
     val valuePreview: String,
     val valueType: String,
-    val passed: Boolean,  // true = value passed filter, false = value dropped
+    // true = value passed filter, false = value dropped
+    val passed: Boolean,
     val sequenceNumber: Int,
     val coroutineId: String? = null,
-    val collectorId: String? = null
+    val collectorId: String? = null,
 ) : VizEvent {
     override val kind = "FlowValueFiltered"
 }
-

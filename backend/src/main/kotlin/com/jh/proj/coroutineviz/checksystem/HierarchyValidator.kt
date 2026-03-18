@@ -13,7 +13,6 @@ import com.jh.proj.coroutineviz.events.coroutine.CoroutineCreated
  * - Parent must not complete before all of its children (structured concurrency)
  */
 object HierarchyValidator {
-
     private val TERMINAL_KINDS = setOf("CoroutineCompleted", "CoroutineCancelled", "CoroutineFailed")
 
     /**
@@ -32,10 +31,11 @@ object HierarchyValidator {
         val createEvents = coroutineEvents.filterIsInstance<CoroutineCreated>()
 
         if (createEvents.isEmpty()) {
-            results += ValidationResult.Pass(
-                "HierarchyValidation",
-                "No coroutine creation events to validate"
-            )
+            results +=
+                ValidationResult.Pass(
+                    "HierarchyValidation",
+                    "No coroutine creation events to validate",
+                )
             return results
         }
 
@@ -47,10 +47,11 @@ object HierarchyValidator {
         }
 
         if (results.isEmpty()) {
-            results += ValidationResult.Pass(
-                "HierarchyValidation",
-                "No parent-child relationships to validate (all coroutines are roots)"
-            )
+            results +=
+                ValidationResult.Pass(
+                    "HierarchyValidation",
+                    "No parent-child relationships to validate (all coroutines are roots)",
+                )
         }
 
         return results
@@ -59,7 +60,7 @@ object HierarchyValidator {
     private fun checkChildCreatedWithinParentScope(
         childCreated: CoroutineCreated,
         parentId: String,
-        byCoroutine: Map<String, List<CoroutineEvent>>
+        byCoroutine: Map<String, List<CoroutineEvent>>,
     ): ValidationResult {
         val ruleName = "ChildCreatedWithinParentScope"
         val parentEvents = byCoroutine[parentId]
@@ -69,7 +70,7 @@ object HierarchyValidator {
                 ruleName,
                 "Child ${childCreated.coroutineId} references non-existent parent $parentId",
                 "CoroutineCreated at seq=${childCreated.seq} references parentCoroutineId=$parentId " +
-                    "but no events exist for that coroutine"
+                    "but no events exist for that coroutine",
             )
         }
 
@@ -79,19 +80,19 @@ object HierarchyValidator {
                 ruleName,
                 "Parent $parentId has no CoroutineCreated event",
                 "Child ${childCreated.coroutineId} references parent $parentId which has events " +
-                    "but no CoroutineCreated"
+                    "but no CoroutineCreated",
             )
         } else if (childCreated.seq > parentCreated.seq) {
             ValidationResult.Pass(
                 ruleName,
                 "Child ${childCreated.coroutineId} created (seq=${childCreated.seq}) " +
-                    "after parent $parentId (seq=${parentCreated.seq})"
+                    "after parent $parentId (seq=${parentCreated.seq})",
             )
         } else {
             ValidationResult.Fail(
                 ruleName,
                 "Child ${childCreated.coroutineId} created before parent $parentId",
-                "Child created at seq=${childCreated.seq} but parent created at seq=${parentCreated.seq}"
+                "Child created at seq=${childCreated.seq} but parent created at seq=${parentCreated.seq}",
             )
         }
     }
@@ -99,47 +100,51 @@ object HierarchyValidator {
     private fun checkParentNotCompletedBeforeChildren(
         childCreated: CoroutineCreated,
         parentId: String,
-        byCoroutine: Map<String, List<CoroutineEvent>>
+        byCoroutine: Map<String, List<CoroutineEvent>>,
     ): ValidationResult {
         val ruleName = "ParentNotCompletedBeforeChildren"
-        val parentEvents = byCoroutine[parentId] ?: return ValidationResult.Pass(
-            ruleName,
-            "Parent $parentId has no events (skipped)"
-        )
-
-        val childEvents = byCoroutine[childCreated.coroutineId] ?: return ValidationResult.Pass(
-            ruleName,
-            "Child ${childCreated.coroutineId} has no events beyond creation (skipped)"
-        )
-
-        val parentCompleted = parentEvents
-            .firstOrNull { it is CoroutineCompleted }
-            ?: return ValidationResult.Pass(
+        val parentEvents =
+            byCoroutine[parentId] ?: return ValidationResult.Pass(
                 ruleName,
-                "Parent $parentId has not completed (skipped)"
+                "Parent $parentId has no events (skipped)",
             )
 
-        val childTerminal = childEvents
-            .firstOrNull { it.kind in TERMINAL_KINDS }
+        val childEvents =
+            byCoroutine[childCreated.coroutineId] ?: return ValidationResult.Pass(
+                ruleName,
+                "Child ${childCreated.coroutineId} has no events beyond creation (skipped)",
+            )
+
+        val parentCompleted =
+            parentEvents
+                .firstOrNull { it is CoroutineCompleted }
+                ?: return ValidationResult.Pass(
+                    ruleName,
+                    "Parent $parentId has not completed (skipped)",
+                )
+
+        val childTerminal =
+            childEvents
+                .firstOrNull { it.kind in TERMINAL_KINDS }
 
         return if (childTerminal == null) {
             // Child hasn't terminated -- if parent completed that's a problem
             ValidationResult.Fail(
                 ruleName,
                 "Parent $parentId completed before child ${childCreated.coroutineId} terminated",
-                "Parent completed at seq=${parentCompleted.seq} but child has no terminal event"
+                "Parent completed at seq=${parentCompleted.seq} but child has no terminal event",
             )
         } else if (parentCompleted.seq >= childTerminal.seq) {
             ValidationResult.Pass(
                 ruleName,
                 "Parent $parentId (completed seq=${parentCompleted.seq}) " +
-                    "waited for child ${childCreated.coroutineId} (terminal seq=${childTerminal.seq})"
+                    "waited for child ${childCreated.coroutineId} (terminal seq=${childTerminal.seq})",
             )
         } else {
             ValidationResult.Fail(
                 ruleName,
                 "Parent $parentId completed before child ${childCreated.coroutineId}",
-                "Parent completed at seq=${parentCompleted.seq} but child terminated at seq=${childTerminal.seq}"
+                "Parent completed at seq=${parentCompleted.seq} but child terminated at seq=${childTerminal.seq}",
             )
         }
     }

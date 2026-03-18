@@ -31,7 +31,7 @@ data class CoroutineSuspended(
     override val label: String?,
     val reason: String,
     val durationMillis: Long? = null,
-    val suspensionPoint: SuspensionPoint? = null
+    val suspensionPoint: SuspensionPoint? = null,
 ) : CoroutineEvent {
     override val kind: String get() = "CoroutineSuspended"
 }

@@ -21,7 +21,7 @@ data class ChannelSendSuspended(
     val channelId: String,
     val coroutineId: String,
     val bufferSize: Int,
-    val capacity: Int
+    val capacity: Int,
 ) : VizEvent {
     override val kind: String get() = "ChannelSendSuspended"
 }

@@ -13,11 +13,12 @@ data class SharedFlowSubscription(
     override val tsNanos: Long,
     val flowId: String,
     val collectorId: String,
-    val action: String,  // "subscribed" or "unsubscribed"
-    val subscriberCount: Int,  // Total subscribers after this action
+    // "subscribed" or "unsubscribed"
+    val action: String,
+    // Total subscribers after this action
+    val subscriberCount: Int,
     val coroutineId: String? = null,
-    val label: String? = null
+    val label: String? = null,
 ) : VizEvent {
     override val kind = "SharedFlowSubscription"
 }
-

@@ -14,7 +14,6 @@ import com.jh.proj.coroutineviz.events.coroutine.CoroutineFailed
  * - Child failure should propagate to parent (unless SupervisorJob)
  */
 object StructuredConcurrencyValidator {
-
     /**
      * Run all structured concurrency validation rules against the given event list.
      *
@@ -37,10 +36,11 @@ object StructuredConcurrencyValidator {
         }
 
         if (parentToChildren.isEmpty()) {
-            results += ValidationResult.Pass(
-                "StructuredConcurrency",
-                "No parent-child relationships to validate"
-            )
+            results +=
+                ValidationResult.Pass(
+                    "StructuredConcurrency",
+                    "No parent-child relationships to validate",
+                )
             return results
         }
 
@@ -52,7 +52,7 @@ object StructuredConcurrencyValidator {
 
     private fun checkParentCancellationPropagation(
         byCoroutine: Map<String, List<CoroutineEvent>>,
-        parentToChildren: Map<String, List<String>>
+        parentToChildren: Map<String, List<String>>,
     ): List<ValidationResult> {
         val results = mutableListOf<ValidationResult>()
         val ruleName = "ParentCancellationPropagation"
@@ -68,28 +68,33 @@ object StructuredConcurrencyValidator {
 
                 // Child should be cancelled or failed (failure could trigger the parent cancel)
                 if (childCancelled != null || childFailed != null) {
-                    results += ValidationResult.Pass(
-                        ruleName,
-                        "Parent $parentId cancelled -> child $childId also terminated"
-                    )
+                    results +=
+                        ValidationResult.Pass(
+                            ruleName,
+                            "Parent $parentId cancelled -> child $childId also terminated",
+                        )
                 } else {
                     // Check if child completed before parent was cancelled (which is fine)
-                    val childTerminal = childEvents.firstOrNull {
-                        it.kind in setOf("CoroutineCompleted", "CoroutineCancelled", "CoroutineFailed")
-                    }
+                    val childTerminal =
+                        childEvents.firstOrNull {
+                            it.kind in setOf("CoroutineCompleted", "CoroutineCancelled", "CoroutineFailed")
+                        }
 
                     if (childTerminal != null && childTerminal.seq < parentCancelled.seq) {
-                        results += ValidationResult.Pass(
-                            ruleName,
-                            "Child $childId completed (seq=${childTerminal.seq}) before parent $parentId cancelled (seq=${parentCancelled.seq})"
-                        )
+                        results +=
+                            ValidationResult.Pass(
+                                ruleName,
+                                "Child $childId completed (seq=${childTerminal.seq}) " +
+                                    "before parent $parentId cancelled (seq=${parentCancelled.seq})",
+                            )
                     } else {
-                        results += ValidationResult.Fail(
-                            ruleName,
-                            "Parent $parentId cancelled but child $childId was not cancelled",
-                            "Parent cancelled at seq=${parentCancelled.seq} but child $childId " +
-                                "has no cancellation or failure event"
-                        )
+                        results +=
+                            ValidationResult.Fail(
+                                ruleName,
+                                "Parent $parentId cancelled but child $childId was not cancelled",
+                                "Parent cancelled at seq=${parentCancelled.seq} but child $childId " +
+                                    "has no cancellation or failure event",
+                            )
                     }
                 }
             }
@@ -104,7 +109,7 @@ object StructuredConcurrencyValidator {
 
     private fun checkChildFailurePropagation(
         byCoroutine: Map<String, List<CoroutineEvent>>,
-        parentToChildren: Map<String, List<String>>
+        parentToChildren: Map<String, List<String>>,
     ): List<ValidationResult> {
         val results = mutableListOf<ValidationResult>()
         val ruleName = "ChildFailurePropagation"
@@ -118,30 +123,34 @@ object StructuredConcurrencyValidator {
 
                 // Child failed -- parent should eventually be cancelled or failed
                 // (unless using SupervisorJob)
-                val parentTerminal = parentEvents.firstOrNull {
-                    it.kind in setOf("CoroutineCancelled", "CoroutineFailed")
-                }
+                val parentTerminal =
+                    parentEvents.firstOrNull {
+                        it.kind in setOf("CoroutineCancelled", "CoroutineFailed")
+                    }
 
                 if (parentTerminal != null) {
-                    results += ValidationResult.Pass(
-                        ruleName,
-                        "Child $childId failed -> parent $parentId also terminated (${parentTerminal.kind})"
-                    )
+                    results +=
+                        ValidationResult.Pass(
+                            ruleName,
+                            "Child $childId failed -> parent $parentId also terminated (${parentTerminal.kind})",
+                        )
                 } else {
                     // Parent may have completed normally if it's a SupervisorJob
                     val parentCompleted = parentEvents.firstOrNull { it.kind == "CoroutineCompleted" }
                     if (parentCompleted != null) {
-                        results += ValidationResult.Pass(
-                            ruleName,
-                            "Child $childId failed but parent $parentId completed (likely SupervisorJob)"
-                        )
+                        results +=
+                            ValidationResult.Pass(
+                                ruleName,
+                                "Child $childId failed but parent $parentId completed (likely SupervisorJob)",
+                            )
                     } else {
-                        results += ValidationResult.Fail(
-                            ruleName,
-                            "Child $childId failed but parent $parentId did not terminate",
-                            "Child failed at seq=${childFailed.seq} but parent $parentId " +
-                                "has no terminal event (expected cancellation or failure propagation)"
-                        )
+                        results +=
+                            ValidationResult.Fail(
+                                ruleName,
+                                "Child $childId failed but parent $parentId did not terminate",
+                                "Child failed at seq=${childFailed.seq} but parent $parentId " +
+                                    "has no terminal event (expected cancellation or failure propagation)",
+                            )
                     }
                 }
             }

@@ -27,8 +27,10 @@ data class FlowValueEmitted(
     val flowId: String,
     val collectorId: String,
     val sequenceNumber: Int,
-    val valuePreview: String,  // toString() of value, truncated to 200 chars
-    val valueType: String      // Class name of the value
+    // toString() of value, truncated to 200 chars
+    val valuePreview: String,
+    // Class name of the value
+    val valueType: String,
 ) : VizEvent {
     override val kind: String get() = "FlowValueEmitted"
 }

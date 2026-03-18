@@ -28,7 +28,7 @@ data class DispatcherSelected(
     override val label: String?,
     val dispatcherId: String,
     val dispatcherName: String,
-    val queueDepth: Int? = null
+    val queueDepth: Int? = null,
 ) : CoroutineEvent {
     override val kind: String get() = "DispatcherSelected"
 }

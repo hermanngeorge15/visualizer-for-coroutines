@@ -20,9 +20,12 @@ data class DeadlockDetected(
     val involvedCoroutineLabels: List<String?>,
     val involvedMutexes: List<String>,
     val involvedMutexLabels: List<String?>,
-    val waitGraph: Map<String, String>,    // coroutineId -> waitingForMutexId
-    val holdGraph: Map<String, String>,    // mutexId -> heldByCoroutineId
-    val cycleDescription: String           // Human-readable cycle description
+    // coroutineId -> waitingForMutexId
+    val waitGraph: Map<String, String>,
+    // mutexId -> heldByCoroutineId
+    val holdGraph: Map<String, String>,
+    // Human-readable cycle description
+    val cycleDescription: String,
 ) : VizEvent {
     override val kind: String get() = "DeadlockDetected"
 }
@@ -42,7 +45,7 @@ data class PotentialDeadlockWarning(
     val holdingMutexLabel: String?,
     val requestingMutex: String,
     val requestingMutexLabel: String?,
-    val recommendation: String
+    val recommendation: String,
 ) : VizEvent {
     override val kind: String get() = "PotentialDeadlockWarning"
 }
@@ -54,7 +57,7 @@ data class WaitGraphNode(
     val coroutineId: String,
     val coroutineLabel: String?,
     val holdingMutexIds: Set<String>,
-    val waitingForMutexId: String?
+    val waitingForMutexId: String?,
 )
 
 /**
@@ -62,19 +65,22 @@ data class WaitGraphNode(
  */
 sealed class DeadlockAnalysisResult {
     data object NoDeadlock : DeadlockAnalysisResult()
-    
+
     data class DeadlockFound(
-        val cycle: List<String>,           // Coroutine IDs in the cycle
-        val cycleLabels: List<String?>,    // Corresponding labels
-        val involvedMutexes: List<String>, // Mutex IDs involved
-        val mutexLabels: List<String?>     // Corresponding labels
+        // Coroutine IDs in the cycle
+        val cycle: List<String>,
+        // Corresponding labels
+        val cycleLabels: List<String?>,
+        // Mutex IDs involved
+        val involvedMutexes: List<String>,
+        // Corresponding labels
+        val mutexLabels: List<String?>,
     ) : DeadlockAnalysisResult()
-    
+
     data class PotentialDeadlock(
         val coroutineId: String,
         val holdingMutex: String,
         val requestingMutex: String,
-        val reason: String
+        val reason: String,
     ) : DeadlockAnalysisResult()
 }
-

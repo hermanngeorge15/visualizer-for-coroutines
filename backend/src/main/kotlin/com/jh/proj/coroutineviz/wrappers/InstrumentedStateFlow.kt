@@ -13,13 +13,13 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * InstrumentedStateFlow wraps a MutableStateFlow to emit visualization events.
- * 
+ *
  * Features:
  * - Tracks value changes with old/new value comparison
  * - Monitors subscriber count
  * - Tracks all state updates
  * - Thread-safe subscriber tracking
- * 
+ *
  * @param T The type of state values
  * @param delegate The underlying MutableStateFlow
  * @param session The VizSession for event tracking
@@ -30,17 +30,16 @@ class InstrumentedStateFlow<T>(
     private val delegate: MutableStateFlow<T>,
     private val session: VizSession,
     val flowId: String,
-    val label: String? = null
+    val label: String? = null,
 ) : MutableStateFlow<T> {
-
     private val subscriberCount = AtomicInteger(0)
-    
+
     private val ctx: FlowEventContext by lazy {
         FlowEventContext(
             session = session,
             flowId = flowId,
             flowType = "StateFlow",
-            label = label
+            label = label,
         )
     }
 
@@ -55,8 +54,8 @@ class InstrumentedStateFlow<T>(
                 flowId = flowId,
                 flowType = "StateFlow",
                 label = label,
-                scopeId = null
-            )
+                scopeId = null,
+            ),
         )
         logger.debug("StateFlow created: flowId=$flowId, initialValue=${delegate.value}")
     }
@@ -75,14 +74,17 @@ class InstrumentedStateFlow<T>(
     // MutableStateFlow - Value Updates
     // ========================================================================
 
-    override fun compareAndSet(expect: T, update: T): Boolean {
+    override fun compareAndSet(
+        expect: T,
+        update: T,
+    ): Boolean {
         val oldValue = delegate.value
         val result = delegate.compareAndSet(expect, update)
-        
+
         if (result) {
             emitValueChanged(oldValue, update)
         }
-        
+
         return result
     }
 
@@ -91,7 +93,7 @@ class InstrumentedStateFlow<T>(
         set(newValue) {
             val oldValue = delegate.value
             delegate.value = newValue
-            
+
             if (oldValue != newValue) {
                 emitValueChanged(oldValue, newValue)
             }
@@ -100,7 +102,7 @@ class InstrumentedStateFlow<T>(
     override suspend fun emit(value: T) {
         val oldValue = delegate.value
         delegate.emit(value)
-        
+
         if (oldValue != value) {
             emitValueChanged(oldValue, value)
         }
@@ -109,11 +111,11 @@ class InstrumentedStateFlow<T>(
     override fun tryEmit(value: T): Boolean {
         val oldValue = delegate.value
         val result = delegate.tryEmit(value)
-        
+
         if (result && oldValue != value) {
             emitValueChanged(oldValue, value)
         }
-        
+
         return result
     }
 
@@ -121,13 +123,17 @@ class InstrumentedStateFlow<T>(
         delegate.resetReplayCache()
     }
 
-    private fun emitValueChanged(oldValue: T, newValue: T) {
-        val coroutineId = runCatching { 
-            kotlinx.coroutines.runBlocking { 
-                currentCoroutineContext()[VizCoroutineElement]?.coroutineId 
-            } 
-        }.getOrNull()
-        
+    private fun emitValueChanged(
+        oldValue: T,
+        newValue: T,
+    ) {
+        val coroutineId =
+            runCatching {
+                kotlinx.coroutines.runBlocking {
+                    currentCoroutineContext()[VizCoroutineElement]?.coroutineId
+                }
+            }.getOrNull()
+
         session.send(
             StateFlowValueChanged(
                 sessionId = session.sessionId,
@@ -139,10 +145,10 @@ class InstrumentedStateFlow<T>(
                 valueType = newValue?.javaClass?.simpleName ?: "null",
                 subscriberCount = subscriberCount.get(),
                 coroutineId = coroutineId,
-                label = label
-            )
+                label = label,
+            ),
         )
-        
+
         logger.debug("StateFlow value changed: flowId=$flowId, old=$oldValue, new=$newValue, subscribers=${subscriberCount.get()}")
     }
 
@@ -157,7 +163,7 @@ class InstrumentedStateFlow<T>(
 
         // Track subscription
         val currentSubscribers = subscriberCount.incrementAndGet()
-        
+
         session.send(
             SharedFlowSubscription(
                 sessionId = session.sessionId,
@@ -168,8 +174,8 @@ class InstrumentedStateFlow<T>(
                 action = "subscribed",
                 subscriberCount = currentSubscribers,
                 coroutineId = coroutineId,
-                label = label
-            )
+                label = label,
+            ),
         )
 
         logger.debug("StateFlow collector subscribed: flowId=$flowId, collectorId=$collectorId, subscribers=$currentSubscribers")
@@ -188,14 +194,14 @@ class InstrumentedStateFlow<T>(
                 ctx.copy(coroutineId = coroutineId).flowCollectionCancelled(
                     collectorId = collectorId,
                     reason = e.message ?: "CancellationException",
-                    emittedCount = emissionCount
-                )
+                    emittedCount = emissionCount,
+                ),
             )
             throw e
         } finally {
             // Track unsubscription
             val remainingSubscribers = subscriberCount.decrementAndGet()
-            
+
             session.send(
                 SharedFlowSubscription(
                     sessionId = session.sessionId,
@@ -206,10 +212,10 @@ class InstrumentedStateFlow<T>(
                     action = "unsubscribed",
                     subscriberCount = remainingSubscribers,
                     coroutineId = coroutineId,
-                    label = label
-                )
+                    label = label,
+                ),
             )
-            
+
             logger.debug("StateFlow collector unsubscribed: flowId=$flowId, collectorId=$collectorId, subscribers=$remainingSubscribers")
         }
     }
@@ -224,14 +230,14 @@ class InstrumentedStateFlow<T>(
  */
 fun <T> VizSession.vizStateFlow(
     initialValue: T,
-    label: String? = null
+    label: String? = null,
 ): InstrumentedStateFlow<T> {
     val flowId = "stateflow-${nextSeq()}"
     return InstrumentedStateFlow(
         delegate = MutableStateFlow(initialValue),
         session = this,
         flowId = flowId,
-        label = label
+        label = label,
     )
 }
 
@@ -240,13 +246,13 @@ fun <T> VizSession.vizStateFlow(
  */
 fun <T> MutableStateFlow<T>.instrumented(
     session: VizSession,
-    label: String? = null
+    label: String? = null,
 ): InstrumentedStateFlow<T> {
     val flowId = "stateflow-${session.nextSeq()}"
     return InstrumentedStateFlow(
         delegate = this,
         session = session,
         flowId = flowId,
-        label = label
+        label = label,
     )
 }

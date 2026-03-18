@@ -19,7 +19,7 @@ data class ChannelBufferStateChanged(
     override val tsNanos: Long,
     val channelId: String,
     val currentSize: Int,
-    val capacity: Int
+    val capacity: Int,
 ) : VizEvent {
     override val kind: String get() = "ChannelBufferStateChanged"
 }

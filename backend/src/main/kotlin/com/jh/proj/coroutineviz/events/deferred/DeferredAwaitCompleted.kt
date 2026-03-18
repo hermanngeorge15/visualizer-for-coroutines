@@ -26,7 +26,7 @@ data class DeferredAwaitCompleted(
     val coroutineId: String,
     val awaiterId: String?,
     val scopeId: String,
-    val label: String?
+    val label: String?,
 ) : VizEvent {
     override val kind: String get() = "DeferredAwaitCompleted"
 }

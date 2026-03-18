@@ -9,7 +9,6 @@ import com.jh.proj.coroutineviz.events.VizEvent
  * sequence numbers are unique across the event stream.
  */
 object SequenceChecker {
-
     /**
      * Check that event types appear in the expected order within the event list.
      *
@@ -21,7 +20,10 @@ object SequenceChecker {
      * @param expectedSequence List of event kind strings in expected order
      * @return [ValidationResult.Pass] if order is correct, [ValidationResult.Fail] otherwise
      */
-    fun checkOrdering(events: List<VizEvent>, expectedSequence: List<String>): ValidationResult {
+    fun checkOrdering(
+        events: List<VizEvent>,
+        expectedSequence: List<String>,
+    ): ValidationResult {
         val ruleName = "EventOrdering"
 
         if (expectedSequence.isEmpty()) {
@@ -40,7 +42,7 @@ object SequenceChecker {
         return if (expectedIndex == expectedSequence.size) {
             ValidationResult.Pass(
                 ruleName,
-                "All ${expectedSequence.size} expected event types found in correct order"
+                "All ${expectedSequence.size} expected event types found in correct order",
             )
         } else {
             val missing = expectedSequence.subList(expectedIndex, expectedSequence.size)
@@ -48,8 +50,8 @@ object SequenceChecker {
                 ruleName,
                 "Event ordering violation",
                 "Expected event types not found in order. " +
-                    "Matched ${expectedIndex}/${expectedSequence.size}. " +
-                    "Missing or out-of-order: $missing"
+                    "Matched $expectedIndex/${expectedSequence.size}. " +
+                    "Missing or out-of-order: $missing",
             )
         }
     }
@@ -72,16 +74,17 @@ object SequenceChecker {
         return if (seqCounts.isEmpty()) {
             ValidationResult.Pass(
                 ruleName,
-                "All ${events.size} events have unique sequence numbers"
+                "All ${events.size} events have unique sequence numbers",
             )
         } else {
-            val duplicates = seqCounts.map { (seq, evts) ->
-                "seq=$seq appears ${evts.size} times (kinds: ${evts.map { it.kind }})"
-            }
+            val duplicates =
+                seqCounts.map { (seq, evts) ->
+                    "seq=$seq appears ${evts.size} times (kinds: ${evts.map { it.kind }})"
+                }
             ValidationResult.Fail(
                 ruleName,
                 "Duplicate sequence numbers detected",
-                "Found ${seqCounts.size} duplicate sequence number(s): ${duplicates.joinToString("; ")}"
+                "Found ${seqCounts.size} duplicate sequence number(s): ${duplicates.joinToString("; ")}",
             )
         }
     }

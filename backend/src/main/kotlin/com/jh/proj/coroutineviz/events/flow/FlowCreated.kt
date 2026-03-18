@@ -25,9 +25,10 @@ data class FlowCreated(
     override val tsNanos: Long,
     val coroutineId: String,
     val flowId: String,
-    val flowType: String,  // "Cold", "Hot", "StateFlow", "SharedFlow"
+    // "Cold", "Hot", "StateFlow", "SharedFlow"
+    val flowType: String,
     val label: String? = null,
-    val scopeId: String? = null
+    val scopeId: String? = null,
 ) : VizEvent {
     override val kind: String get() = "FlowCreated"
 }
