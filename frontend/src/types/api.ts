@@ -654,6 +654,32 @@ export interface LatencyBucket {
 }
 
 // ---------------------------------------------------------------------------
+// Session Comparison (from GET /api/compare)
+// ---------------------------------------------------------------------------
+
+/** Result of comparing two visualization sessions */
+export interface SessionComparison {
+  sessionA: string
+  sessionB: string
+  coroutineCountDiff: number
+  eventCountDiff: number
+  totalDurationDiffNanos: number
+  coroutinesOnlyInA: string[]
+  coroutinesOnlyInB: string[]
+  commonCoroutines: CoroutineComparison[]
+}
+
+/** Comparison of a single coroutine that exists in both sessions */
+export interface CoroutineComparison {
+  coroutineId: string
+  label: string | null
+  stateA: string
+  stateB: string
+  eventCountA: number
+  eventCountB: number
+}
+
+// ---------------------------------------------------------------------------
 // Event kind constants for category detection
 // ---------------------------------------------------------------------------
 
