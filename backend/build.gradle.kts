@@ -29,6 +29,8 @@ dependencies {
 
     implementation("org.openfolder:kotlin-asyncapi-ktor:3.1.3")
     implementation("io.ktor:ktor-server-core")
+    implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-compression")
     implementation("io.ktor:ktor-server-cors")
     implementation("io.ktor:ktor-server-swagger")
     implementation("io.ktor:ktor-server-openapi")

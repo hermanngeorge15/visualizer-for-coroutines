@@ -49,6 +49,7 @@ fun Application.configureHTTP() {
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.Accept)
+        allowHeader("X-API-Key")
 
         // Required for SSE (Server-Sent Events)
         allowHeader(HttpHeaders.CacheControl)
