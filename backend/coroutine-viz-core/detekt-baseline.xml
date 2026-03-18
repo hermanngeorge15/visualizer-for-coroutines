@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:ProjectionService.kt$ProjectionService$private fun processEvent(event: VizEvent)</ID>
+    <ID>LargeClass:EventSerializationTest.kt$EventSerializationTest</ID>
+    <ID>LongMethod:InstrumentedDeferred.kt$InstrumentedDeferred$override suspend fun await(): T</ID>
+    <ID>LongMethod:ProjectionService.kt$ProjectionService$private fun processEvent(event: VizEvent)</ID>
+    <ID>LongMethod:VizScope.kt$VizScope$suspend fun &lt;T> vizAsync( label: String? = null, context: CoroutineContext = EmptyCoroutineContext, block: suspend VizScope.() -> T, ): InstrumentedDeferred&lt;T></ID>
+    <ID>LongMethod:VizScope.kt$VizScope$suspend fun vizLaunch( label: String? = null, context: CoroutineContext = EmptyCoroutineContext, block: suspend VizScope.() -> Unit, ): Job</ID>
+    <ID>LongParameterList:InstrumentedDeferred.kt$InstrumentedDeferred$( private val delegate: Deferred&lt;T>, private val session: VizSession, private val deferredId: String, private val coroutineId: String, private val jobId: String, private val parentCoroutineId: String?, private val scopeId: String, private val label: String?, )</ID>
+    <ID>LoopWithTooManyJumpStatements:ExceptionHandlingRules.kt$UncaughtExceptionInLaunchRule$for</ID>
+    <ID>LoopWithTooManyJumpStatements:HierarchyRules.kt$ChildCreatedAfterParentRule$for</ID>
+    <ID>LoopWithTooManyJumpStatements:HierarchyRules.kt$ParentWaitsForChildrenRule$for</ID>
+    <ID>LoopWithTooManyJumpStatements:PerformanceRules.kt$MainThreadBlockingRule$for</ID>
+    <ID>LoopWithTooManyJumpStatements:StructuredConcurrencyRules.kt$ChildFailurePropagationRule$for</ID>
+    <ID>LoopWithTooManyJumpStatements:StructuredConcurrencyValidator.kt$StructuredConcurrencyValidator$for</ID>
+    <ID>MagicNumber:FlowEventContext.kt$100</ID>
+    <ID>MagicNumber:FlowEventContext.kt$200</ID>
+    <ID>MagicNumber:InstrumentedChannel.kt$InstrumentedChannel$200</ID>
+    <ID>MagicNumber:InstrumentedChannel.kt$InstrumentedChannel.&lt;no name provided>$200</ID>
+    <ID>MagicNumber:InstrumentedFlow.kt$InstrumentedFlow$200</ID>
+    <ID>MagicNumber:InstrumentedFlow.kt$InstrumentedFlow.&lt;no name provided>$200</ID>
+    <ID>MagicNumber:InstrumentedSharedFlow.kt$InstrumentedSharedFlow$100</ID>
+    <ID>MagicNumber:InstrumentedSharedFlow.kt$InstrumentedSharedFlow$200</ID>
+    <ID>MagicNumber:InstrumentedStateFlow.kt$InstrumentedStateFlow$200</ID>
+    <ID>MagicNumber:PerformanceRules.kt$SlowSuspensionRule$1_000_000</ID>
+    <ID>MagicNumber:RealTimeValidator.kt$RealTimeValidator$500</ID>
+    <ID>MagicNumber:ThreadingRules.kt$WrongDispatcherRule$3</ID>
+    <ID>MagicNumber:VizActor.kt$VizActor$200</ID>
+    <ID>MagicNumber:VizActor.kt$VizActor.Companion$64</ID>
+    <ID>MemberNameEqualsClassName:VizSelect.kt$VizSelect$suspend fun &lt;R> vizSelect( coroutineId: String, block: VizSelectBuilder&lt;R>.() -> Unit, ): R</ID>
+    <ID>NestedBlockDepth:AntiPatternDetector.kt$AntiPatternDetector$fun detectUnnecessaryAsyncAwait(): List&lt;AntiPatternDetected></ID>
+    <ID>NestedBlockDepth:DeadlockDetector.kt$DeadlockDetector$private fun checkPotentialDeadlock(): DeadlockAnalysisResult</ID>
+    <ID>NestedBlockDepth:StructuredConcurrencyValidator.kt$StructuredConcurrencyValidator$private fun checkChildFailurePropagation( byCoroutine: Map&lt;String, List&lt;CoroutineEvent>>, parentToChildren: Map&lt;String, List&lt;String>>, ): List&lt;ValidationResult></ID>
+    <ID>NestedBlockDepth:StructuredConcurrencyValidator.kt$StructuredConcurrencyValidator$private fun checkParentCancellationPropagation( byCoroutine: Map&lt;String, List&lt;CoroutineEvent>>, parentToChildren: Map&lt;String, List&lt;String>>, ): List&lt;ValidationResult></ID>
+    <ID>NestedBlockDepth:TimingAnalyzer.kt$TimingAnalyzer$fun analyze(events: List&lt;VizEvent>): TimingReport</ID>
+    <ID>ReturnCount:DeadlockDetector.kt$DeadlockDetector$private fun detectCycleDFS( node: String, graph: Map&lt;String, String>, visited: MutableSet&lt;String>, recursionStack: MutableSet&lt;String>, path: MutableList&lt;String>, ): List&lt;String>?</ID>
+    <ID>ReturnCount:HierarchyValidator.kt$HierarchyValidator$private fun checkParentNotCompletedBeforeChildren( childCreated: CoroutineCreated, parentId: String, byCoroutine: Map&lt;String, List&lt;CoroutineEvent>>, ): ValidationResult</ID>
+    <ID>SwallowedException:VizActor.kt$VizActor$e: CancellationException</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:SuspensionPoint.kt$SuspensionPoint.Companion$Throwable()</ID>
+    <ID>ThrowsCount:SyncValidators.kt$SemaphoreValidator$fun verifyPermitBounds( semaphoreId: String, maxPermits: Int, )</ID>
+    <ID>TooManyFunctions:EventContext.kt$com.jh.proj.coroutineviz.session.EventContext.kt</ID>
+    <ID>TooManyFunctions:EventSerializationTest.kt$EventSerializationTest</ID>
+    <ID>TooManyFunctions:FlowEventContext.kt$com.jh.proj.coroutineviz.session.FlowEventContext.kt</ID>
+    <ID>TooManyFunctions:LifecycleValidatorTest.kt$LifecycleValidatorTest</ID>
+    <ID>TooManyFunctions:SyncValidatorsTest.kt$SyncValidatorsTest</ID>
+    <ID>TooManyFunctions:VizSession.kt$VizSession</ID>
+    <ID>UnusedParameter:FlowEventContext.kt$FlowEventContext$operatorName: String</ID>
+    <ID>UnusedParameter:ProjectionService.kt$ProjectionService$roots: List&lt;HierarchyNode></ID>
+    <ID>UnusedParameter:VizSelect.kt$label: String? = null</ID>
+    <ID>UnusedPrivateProperty:AntiPatternDetector.kt$AntiPatternDetector$val threadAssignments = recorder.ofKind("ThreadAssigned") .filterIsInstance&lt;ThreadAssigned>()</ID>
+    <ID>UnusedPrivateProperty:InstrumentedFlow.kt$InstrumentedFlow$val inputSeq = inputSequence++</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,20 @@
+# Default owner for everything
+* @hermanngeorge15
+
+# Backend
+/backend/ @hermanngeorge15
+
+# Frontend
+/frontend/ @hermanngeorge15
+
+# Shared API types
+/shared/ @hermanngeorge15
+
+# CI/CD and GitHub config
+/.github/ @hermanngeorge15
+
+# Architecture Decision Records
+/docs/adr/ @hermanngeorge15
+
+# Docker configuration
+/docker-compose*.yml @hermanngeorge15

@@ -1,0 +1,68 @@
+name: Feature Request
+description: Suggest a new feature for the Kotlin Coroutine Visualizer
+title: "[Feature]: "
+labels: ["enhancement", "feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe what you'd like to see.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area does this feature relate to?
+      options:
+        - Visualization — New view or interaction
+        - Event system — New event types
+        - Wrappers — New instrumentation
+        - Scenarios — New coroutine patterns
+        - Validation — New correctness rules
+        - IntelliJ Plugin
+        - Documentation
+        - Infrastructure / DevEx
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What's the use case?
+      placeholder: "I want to understand X about my coroutines, but currently..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you'd like this to work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you've considered?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: How large is this feature?
+      options:
+        - Small — Single component or endpoint
+        - Medium — Multiple components, new event types
+        - Large — New system or major refactor
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any mockups, references, or additional context.
