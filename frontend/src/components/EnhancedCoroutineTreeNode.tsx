@@ -30,7 +30,7 @@ export function EnhancedCoroutineTreeNode({
   const isWaiting = node.state === 'WAITING_FOR_CHILDREN'
 
   // Get child nodes
-  const childNodes = node.children
+  const childNodes = (node.children as string[])
     .map(childId => allNodes.get(childId))
     .filter((n): n is HierarchyNode => n !== undefined)
 

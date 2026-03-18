@@ -86,7 +86,7 @@ function DispatcherCard({ dispatcher }: { dispatcher: DispatcherInfo }) {
           </div>
 
           {/* Queue Depth */}
-          {dispatcher.queueDepth !== undefined && (
+          {dispatcher.queueDepth != null && (
             <div className={`p-3 rounded-lg ${dispatcher.queueDepth > 0 ? 'bg-warning/10 border border-warning/20' : 'bg-default-100'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

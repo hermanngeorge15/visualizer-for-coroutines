@@ -113,18 +113,19 @@ describe('useHierarchyTree', () => {
 
     // Root should be the only top-level node
     expect(result.current.data).toHaveLength(1)
-    const root = result.current.data[0]
+    const root = result.current.data[0]!
     expect(root.id).toBe('root')
 
     // Root should have 2 children
     expect(root.children).toHaveLength(2)
-    expect(root.children.map((c: HierarchyNode) => c.id)).toContain('c1')
-    expect(root.children.map((c: HierarchyNode) => c.id)).toContain('c2')
+    const rootChildren = root.children as HierarchyNode[]
+    expect(rootChildren.map((c: HierarchyNode) => c.id)).toContain('c1')
+    expect(rootChildren.map((c: HierarchyNode) => c.id)).toContain('c2')
 
     // c1 should have 1 child (c3)
-    const c1 = root.children.find((c: HierarchyNode) => c.id === 'c1')
+    const c1 = rootChildren.find((c: HierarchyNode) => c.id === 'c1')
     expect(c1?.children).toHaveLength(1)
-    expect(c1?.children[0].id).toBe('c3')
+    expect((c1?.children as HierarchyNode[] | undefined)?.[0]?.id).toBe('c3')
   })
 
   it('returns empty array when no nodes', async () => {

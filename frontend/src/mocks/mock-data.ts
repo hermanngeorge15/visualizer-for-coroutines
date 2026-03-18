@@ -5,6 +5,9 @@
  * while the backend implementation is in progress.
  */
 
+import {
+  CoroutineState,
+} from '@/types/api'
 import type {
   HierarchyNode,
   HierarchyNodeTree,
@@ -15,7 +18,6 @@ import type {
   CoroutineTimeline,
   TimelineEvent,
   SuspensionPoint,
-  CoroutineState,
 } from '@/types/api'
 
 // ============================================================================
@@ -25,7 +27,7 @@ import type {
 export function generateMockHierarchyNode(
   id: string,
   parentId: string | null,
-  state: CoroutineState = 'COMPLETED',
+  state: CoroutineState = CoroutineState.COMPLETED,
   options?: {
     name?: string
     scopeId?: string
@@ -46,17 +48,17 @@ export function generateMockHierarchyNode(
     scopeId: options?.scopeId || 'scope-root',
     state,
     createdAtNanos: now,
-    completedAtNanos: state === 'COMPLETED' || state === 'FAILED' || state === 'CANCELLED'
+    completedAtNanos: state === CoroutineState.COMPLETED || state === CoroutineState.FAILED || state === CoroutineState.CANCELLED
       ? now + duration
       : null,
-    currentThreadId: state === 'ACTIVE' ? Math.floor(Math.random() * 4) + 1 : null,
-    currentThreadName: state === 'ACTIVE' ? `DefaultDispatcher-worker-${Math.floor(Math.random() * 4) + 1}` : null,
+    currentThreadId: state === CoroutineState.ACTIVE ? Math.floor(Math.random() * 4) + 1 : null,
+    currentThreadName: state === CoroutineState.ACTIVE ? `DefaultDispatcher-worker-${Math.floor(Math.random() * 4) + 1}` : null,
     dispatcherId: options?.dispatcherName ? `dispatcher-${options.dispatcherName}` : 'dispatcher-Default',
     dispatcherName: options?.dispatcherName || 'Default',
     jobId: `job-${id}`,
     activeTime: duration * 0.7,  // 70% active
     suspendedTime: duration * 0.3,  // 30% suspended
-    suspensionPoints: state === 'SUSPENDED' ? [generateMockSuspensionPoint()] : []
+    suspensionPoints: state === CoroutineState.SUSPENDED ? [generateMockSuspensionPoint()] : []
   }
 }
 
@@ -69,7 +71,7 @@ export function generateMockHierarchyTree(depth: number = 3, breadth: number = 2
   ): HierarchyNodeTree {
     const hasChildren = currentDepth < maxDepth
     const childCount = hasChildren ? breadth : 0
-    const state: CoroutineState = currentDepth === 0 ? 'COMPLETED' : (Math.random() > 0.7 ? 'ACTIVE' : 'COMPLETED')
+    const state: CoroutineState = currentDepth === 0 ? CoroutineState.COMPLETED : (Math.random() > 0.7 ? CoroutineState.ACTIVE : CoroutineState.COMPLETED)
     
     const node = generateMockHierarchyNode(id, parentId, state, {
       name: `${currentDepth === 0 ? 'root' : `level-${currentDepth}`}-${id}`,
@@ -110,10 +112,10 @@ export function generateMockSuspensionPoint(): SuspensionPoint {
   ]
 
   return {
-    function: functions[Math.floor(Math.random() * functions.length)],
+    function: functions[Math.floor(Math.random() * functions.length)] ?? 'unknown',
     fileName: files[Math.floor(Math.random() * files.length)],
     lineNumber: Math.floor(Math.random() * 200) + 10,
-    reason: reasons[Math.floor(Math.random() * reasons.length)],
+    reason: reasons[Math.floor(Math.random() * reasons.length)] ?? 'unknown',
     timestamp: Date.now() * 1_000_000
   }
 }
@@ -177,9 +179,9 @@ export function generateMockThreadActivity(
   const dispatcherMap = new Map<string, number[]>()
 
   for (let i = 1; i <= threadCount; i++) {
-    const dispatcherName = dispatchers[i % 2]
+    const dispatcherName = dispatchers[i % 2] ?? 'Default'
     threads.push(generateMockThreadLane(i, dispatcherName, segmentsPerThread))
-    
+
     if (!dispatcherMap.has(dispatcherName)) {
       dispatcherMap.set(dispatcherName, [])
     }
@@ -207,7 +209,7 @@ export function generateMockThreadActivity(
 
 export function generateMockTimelineEvent(
   seq: number,
-  kind: 'coroutine.created' | 'coroutine.started' | 'coroutine.suspended' | 'coroutine.resumed' | 'coroutine.completed',
+  kind: TimelineEvent['kind'],
   baseTime: number
 ): TimelineEvent {
   const event: TimelineEvent = {
@@ -253,13 +255,15 @@ export function generateMockCoroutineTimeline(
   events.forEach((event, i) => {
     if (event.kind === 'coroutine.resumed' && i > 0) {
       const suspendEvent = events[i - 1]
-      if (suspendEvent.kind === 'coroutine.suspended') {
+      if (suspendEvent?.kind === 'coroutine.suspended') {
         event.duration = event.timestamp - suspendEvent.timestamp
       }
     }
   })
 
-  const totalDuration = events[events.length - 1].timestamp - events[0].timestamp
+  const lastEvent = events[events.length - 1]
+  const firstEvent = events[0]
+  const totalDuration = lastEvent && firstEvent ? lastEvent.timestamp - firstEvent.timestamp : 0
   const suspendedTime = events
     .filter(e => e.kind === 'coroutine.suspended')
     .reduce((sum, e, i) => {
@@ -270,7 +274,7 @@ export function generateMockCoroutineTimeline(
   return {
     coroutineId,
     name: `coroutine-${coroutineId}`,
-    state: 'COMPLETED',
+    state: CoroutineState.COMPLETED,
     parentId: null,
     childrenIds: [],
     totalDuration,

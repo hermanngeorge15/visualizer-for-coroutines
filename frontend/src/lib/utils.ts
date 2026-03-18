@@ -79,9 +79,10 @@ export function formatRelativeTime(nanos: number, baseNanos: number): string {
   return `+${deltaMs.toFixed(2)}ms`
 }
 
-export function buildCoroutineTree(nodes: Array<{ id: string; parentId: string | null }>) {
-  const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [] as typeof nodes }]))
-  const roots: typeof nodes = []
+export function buildCoroutineTree<T extends { id: string; parentId: string | null }>(nodes: T[]) {
+  type TreeNode = T & { children: TreeNode[] }
+  const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [] as TreeNode[] } as TreeNode]))
+  const roots: TreeNode[] = []
 
   nodes.forEach(node => {
     if (node.parentId && nodeMap.has(node.parentId)) {

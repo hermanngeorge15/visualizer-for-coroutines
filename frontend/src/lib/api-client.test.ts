@@ -147,7 +147,7 @@ describe('ApiClient', () => {
         filter: 'coroutine',
       })
 
-      const calledUrl = mockFetch.mock.calls[0][0] as string
+      const calledUrl = mockFetch.mock.calls[0]![0] as string
       expect(calledUrl).toContain('/api/sessions/session-1/events?')
       expect(calledUrl).toContain('sinceStep=5')
       expect(calledUrl).toContain('limit=10')
@@ -183,7 +183,7 @@ describe('ApiClient', () => {
 
       await apiClient.getHierarchy('session-1', 'scope-123')
 
-      const calledUrl = mockFetch.mock.calls[0][0] as string
+      const calledUrl = mockFetch.mock.calls[0]![0] as string
       expect(calledUrl).toContain('scopeId=scope-123')
     })
   })
