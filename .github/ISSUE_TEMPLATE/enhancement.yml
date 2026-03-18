@@ -1,0 +1,65 @@
+name: Enhancement
+description: Suggest an improvement to an existing feature
+title: "[Enhancement]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest an improvement to something that already exists.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which existing component should be improved?
+      options:
+        - Frontend — Coroutine tree / graph
+        - Frontend — Timeline view
+        - Frontend — Flow visualization
+        - Frontend — Channel visualization
+        - Frontend — Sync visualization
+        - Frontend — Validation panel
+        - Frontend — Session management UI
+        - Backend — Event system
+        - Backend — Wrappers
+        - Backend — Scenarios
+        - Backend — Validation / Checksystem
+        - Backend — API / Routes
+        - Shared — API types
+        - Infrastructure — Docker
+        - Infrastructure — CI/CD
+        - Testing
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Behavior
+      description: How does this feature currently work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed Improvement
+      description: What should change and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: Expected Benefit
+      description: How would users or developers benefit from this change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any mockups, benchmarks, or references.

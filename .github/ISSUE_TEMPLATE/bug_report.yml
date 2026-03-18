@@ -1,0 +1,111 @@
+name: Bug Report
+description: Report a bug in the Kotlin Coroutine Visualizer
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the sections below.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the project is affected?
+      options:
+        - Frontend — Visualization (tree, graph, timeline)
+        - Frontend — Flow panel
+        - Frontend — Channel panel
+        - Frontend — Sync panel
+        - Frontend — Validation panel
+        - Frontend — Session management
+        - Backend — Event system
+        - Backend — Wrappers (VizScope, InstrumentedFlow, etc.)
+        - Backend — Session / EventBus
+        - Backend — Scenarios
+        - Backend — Validation / Checksystem
+        - Backend — SSE streaming
+        - Backend — Routes / API
+        - Shared — API types / OpenAPI
+        - Infrastructure — Docker
+        - Infrastructure — CI/CD
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug.
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: How are you running the project?
+      options:
+        - Docker Compose
+        - Local (gradlew + pnpm dev)
+        - Production deployment
+      multiple: true
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: If frontend-related, which browser?
+      placeholder: "e.g., Chrome 120, Firefox 121"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Paste any error messages, stack traces, or console output.
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the issue.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem.
