@@ -91,6 +91,22 @@ class EventStoreTest {
     }
 
     @Test
+    fun `onEvict callback receives the evicted event`() {
+        val evictedEvents = mutableListOf<Long>()
+        val store = EventStore(maxEvents = 3)
+        store.onEvict = { evictedEvents.add(it.seq) }
+
+        for (i in 1L..6L) {
+            store.append(event(i))
+        }
+
+        // Events 1, 2, 3 should have been evicted in order
+        assertEquals(listOf(1L, 2L, 3L), evictedEvents)
+        // Remaining events should be 4, 5, 6
+        assertEquals(listOf(4L, 5L, 6L), store.all().map { it.seq })
+    }
+
+    @Test
     fun `all returns defensive copy`() {
         val store = EventStore()
         store.append(event(1))

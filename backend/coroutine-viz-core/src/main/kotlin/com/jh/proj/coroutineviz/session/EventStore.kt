@@ -1,5 +1,6 @@
 package com.jh.proj.coroutineviz.session
 
+import com.jh.proj.coroutineviz.events.CoroutineEvent
 import com.jh.proj.coroutineviz.events.VizEvent
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -16,15 +17,18 @@ import kotlin.concurrent.write
  * for thread-safe concurrent access. When the store reaches [maxEvents],
  * the oldest events are evicted to bound memory usage.
  *
+ * Implements [EventStoreInterface] so callers can depend on the abstraction
+ * rather than this concrete class.
+ *
  * @param maxEvents Maximum number of events to retain. Oldest events
  *   are evicted when this limit is exceeded.
  */
-class EventStore(private val maxEvents: Int = 100_000) {
+class EventStore(private val maxEvents: Int = 10_000) : EventStoreInterface {
     private val events = ArrayDeque<VizEvent>()
     private val lock = ReentrantReadWriteLock()
 
-    /** Optional callback invoked each time an event is evicted. */
-    var onEvict: (() -> Unit)? = null
+    /** Optional callback invoked with the evicted event each time an event is evicted. */
+    var onEvict: ((VizEvent) -> Unit)? = null
 
     /**
      * Append an event to the store.
@@ -36,10 +40,20 @@ class EventStore(private val maxEvents: Int = 100_000) {
         lock.write {
             events.addLast(event)
             while (events.size > maxEvents) {
-                events.removeFirst()
-                onEvict?.invoke()
+                val evicted = events.removeFirst()
+                onEvict?.invoke(evicted)
             }
         }
+    }
+
+    /**
+     * Record (append) an event to the store.
+     * Alias for [append] that satisfies the [EventStoreInterface] contract.
+     *
+     * @param event The event to store
+     */
+    override fun record(event: VizEvent) {
+        append(event)
     }
 
     /**
@@ -47,16 +61,57 @@ class EventStore(private val maxEvents: Int = 100_000) {
      *
      * @return Defensive copy of all events
      */
-    fun all(): List<VizEvent> =
+    override fun all(): List<VizEvent> =
         lock.read {
             events.toList()
         }
 
     /**
-     * Current number of stored events.
+     * Retrieve events with sequence number strictly greater than [seq].
+     *
+     * @param seq The exclusive lower bound on sequence numbers
+     * @return Events with seq > [seq], in emission order
      */
-    fun size(): Int =
+    override fun since(seq: Long): List<VizEvent> =
+        lock.read {
+            events.filter { it.seq > seq }
+        }
+
+    /**
+     * Retrieve all events associated with a specific coroutine.
+     *
+     * Filters for events implementing [CoroutineEvent] whose
+     * [CoroutineEvent.coroutineId] matches [coroutineId].
+     *
+     * @param coroutineId The coroutine identifier to filter by
+     * @return Matching events in emission order
+     */
+    override fun byCoroutine(coroutineId: String): List<VizEvent> =
+        lock.read {
+            events.filter { it is CoroutineEvent && it.coroutineId == coroutineId }
+        }
+
+    /**
+     * Current number of stored events.
+     * Satisfies the [EventStoreInterface.count] contract.
+     */
+    override fun count(): Int =
         lock.read {
             events.size
         }
+
+    /**
+     * Current number of stored events.
+     * Retained for backwards compatibility — delegates to [count].
+     */
+    fun size(): Int = count()
+
+    /**
+     * Remove all stored events.
+     */
+    override fun clear() {
+        lock.write {
+            events.clear()
+        }
+    }
 }

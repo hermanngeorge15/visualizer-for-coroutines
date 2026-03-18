@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class VizSession(
     val sessionId: String,
-    maxEvents: Int = 100_000,
+    maxEvents: Int = 10_000,
 ) {
     // Session-scoped coroutine scope for async operations
     val sessionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
