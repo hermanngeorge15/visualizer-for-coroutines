@@ -4,6 +4,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { Button, Chip } from '@heroui/react'
 import type { CoroutineNode } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
+import { useAnimationSlot } from '@/lib/animation-throttle'
 import { FiCircle, FiCheckCircle, FiXCircle, FiLoader, FiClock, FiPause, FiAlertCircle, FiZoomIn, FiZoomOut, FiMaximize, FiLock, FiUnlock } from 'react-icons/fi'
 
 interface CoroutineTreeGraphProps {
@@ -181,20 +182,28 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
   const stateConfig = getStateConfig(node.state)
   const hasChildren = node.children.length > 0
   const parentConfig = getStateConfig(node.state)
+  const shouldAnimate = useAnimationSlot()
+
+  const WrapperComponent = shouldAnimate ? motion.div : 'div'
+  const CardComponent = shouldAnimate ? motion.div : 'div'
 
   return (
     <div className="flex flex-col items-center">
       {/* Connection line from parent - simplified */}
       {!isRoot && (
         <div className="relative flex flex-col items-center">
-          <motion.div
-            className={`h-12 w-0.5 ${parentConfig.lineColor} rounded-full`}
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ delay: level * 0.1, duration: 0.3 }}
-          />
+          {shouldAnimate ? (
+            <motion.div
+              className={`h-12 w-0.5 ${parentConfig.lineColor} rounded-full`}
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ delay: level * 0.1, duration: 0.3 }}
+            />
+          ) : (
+            <div className={`h-12 w-0.5 ${parentConfig.lineColor} rounded-full`} />
+          )}
           {/* Animated flow particles for running states */}
-          {isRunning(node.state) && (
+          {shouldAnimate && isRunning(node.state) && (
             <motion.div
               className="absolute left-1/2 h-1.5 w-1.5 rounded-full bg-primary"
               style={{ marginLeft: '-3px' }}
@@ -213,108 +222,126 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
       )}
 
       {/* Node Card */}
-      <motion.div
-        key={`wrapper-${node.id}`}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
-        transition={{
-          delay: level * 0.1 + siblingIndex * 0.05,
-          type: 'spring',
-          stiffness: 200,
-          damping: 20,
-        }}
+      <WrapperComponent
+        {...(shouldAnimate
+          ? {
+              key: `wrapper-${node.id}`,
+              initial: { scale: 0, opacity: 0 },
+              animate: { scale: 1, opacity: 1 },
+              exit: { scale: 0.8, opacity: 0 },
+              transition: {
+                delay: level * 0.1 + siblingIndex * 0.05,
+                type: 'spring',
+                stiffness: 200,
+                damping: 20,
+              },
+            }
+          : {})}
         className="relative z-10"
       >
-        <motion.div
-          key={`card-${node.id}-${node.state}`}
+        <CardComponent
+          {...(shouldAnimate
+            ? {
+                key: `card-${node.id}-${node.state}`,
+                whileHover: { scale: 1.05 },
+                initial: false,
+                animate: isRunning(node.state)
+                  ? {
+                      boxShadow: [
+                        '0 10px 40px -12px rgba(99, 102, 241, 0.3)',
+                        '0 10px 40px -12px rgba(99, 102, 241, 0.6)',
+                        '0 10px 40px -12px rgba(99, 102, 241, 0.3)',
+                      ],
+                    }
+                  : {},
+                transition: isRunning(node.state)
+                  ? {
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }
+                  : {},
+              }
+            : {})}
           className={`
             relative rounded-2xl border-2 bg-content1 p-6 shadow-lg
             transition-all hover:shadow-2xl
             ${stateConfig.borderColor}
           `}
-          whileHover={{ scale: 1.05 }}
-          initial={false}
-          animate={
-            isRunning(node.state)
-              ? {
-                  boxShadow: [
-                    '0 10px 40px -12px rgba(99, 102, 241, 0.3)',
-                    '0 10px 40px -12px rgba(99, 102, 241, 0.6)',
-                    '0 10px 40px -12px rgba(99, 102, 241, 0.3)',
-                  ],
-                }
-              : {}
-          }
-          transition={
-            isRunning(node.state)
-              ? {
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }
-              : {}
-          }
           style={{ minWidth: '280px' }}
         >
           {/* Animated Background for Running States */}
-          <AnimatePresence>
-            {isRunning(node.state) && (
-              <motion.div
-                className="absolute inset-0 rounded-2xl bg-primary/5"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: node.state === 'WAITING_FOR_CHILDREN' ? [0.2, 0.4, 0.2] : [0.3, 0.6, 0.3],
-                }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: node.state === 'WAITING_FOR_CHILDREN' ? 3 : 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-              />
-            )}
-          </AnimatePresence>
+          {shouldAnimate ? (
+            <AnimatePresence>
+              {isRunning(node.state) && (
+                <motion.div
+                  className="absolute inset-0 rounded-2xl bg-primary/5"
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: node.state === 'WAITING_FOR_CHILDREN' ? [0.2, 0.4, 0.2] : [0.3, 0.6, 0.3],
+                  }}
+                  exit={{ opacity: 0 }}
+                  transition={{
+                    duration: node.state === 'WAITING_FOR_CHILDREN' ? 3 : 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              )}
+            </AnimatePresence>
+          ) : (
+            isRunning(node.state) && (
+              <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-30" />
+            )
+          )}
 
           <div className="relative z-10">
             {/* Header with Icon and Label */}
             <div className="mb-3 flex items-center gap-3">
-              <motion.div
-                key={`icon-${node.id}-${node.state}`}
-                className={`${stateConfig.iconColor} flex h-10 w-10 items-center justify-center rounded-full ${stateConfig.iconBg}`}
-                initial={false}
-                animate={
-                  node.state === 'ACTIVE'
-                    ? {
-                        rotate: 360,
-                        scale: [1, 1.1, 1],
-                      }
-                    : node.state === 'WAITING_FOR_CHILDREN'
-                    ? {
-                        scale: [1, 1.15, 1],
-                      }
-                    : {}
-                }
-                transition={
-                  node.state === 'ACTIVE'
-                    ? {
-                        rotate: { duration: 2, repeat: Infinity, ease: 'linear' },
-                        scale: { duration: 1, repeat: Infinity, ease: 'easeInOut' },
-                      }
-                    : node.state === 'WAITING_FOR_CHILDREN'
-                    ? {
-                        scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
-                      }
-                    : {}
-                }
-              >
-                {stateConfig.icon}
-              </motion.div>
+              {shouldAnimate ? (
+                <motion.div
+                  key={`icon-${node.id}-${node.state}`}
+                  className={`${stateConfig.iconColor} flex h-10 w-10 items-center justify-center rounded-full ${stateConfig.iconBg}`}
+                  initial={false}
+                  animate={
+                    node.state === 'ACTIVE'
+                      ? {
+                          rotate: 360,
+                          scale: [1, 1.1, 1],
+                        }
+                      : node.state === 'WAITING_FOR_CHILDREN'
+                      ? {
+                          scale: [1, 1.15, 1],
+                        }
+                      : {}
+                  }
+                  transition={
+                    node.state === 'ACTIVE'
+                      ? {
+                          rotate: { duration: 2, repeat: Infinity, ease: 'linear' },
+                          scale: { duration: 1, repeat: Infinity, ease: 'easeInOut' },
+                        }
+                      : node.state === 'WAITING_FOR_CHILDREN'
+                      ? {
+                          scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+                        }
+                      : {}
+                  }
+                >
+                  {stateConfig.icon}
+                </motion.div>
+              ) : (
+                <div
+                  className={`${stateConfig.iconColor} flex h-10 w-10 items-center justify-center rounded-full ${stateConfig.iconBg}`}
+                >
+                  {stateConfig.icon}
+                </div>
+              )}
               <div className="flex-1">
                 <div className="text-lg font-bold">{node.label || node.id}</div>
                 <div className="text-xs text-default-500">
                   {node.state}
-                  {node.state === 'ACTIVE' && (
+                  {node.state === 'ACTIVE' && shouldAnimate && (
                     <motion.span
                       className="ml-2 inline-block"
                       animate={{ opacity: [1, 0.5, 1] }}
@@ -323,13 +350,17 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
                       ●
                     </motion.span>
                   )}
+                  {node.state === 'ACTIVE' && !shouldAnimate && (
+                    <span className="ml-2 inline-block">●</span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Details */}
+            {shouldAnimate ? (
             <AnimatePresence mode="wait">
-              <motion.div 
+              <motion.div
                 className="space-y-1 text-sm"
                 key={node.state}
                 initial={{ opacity: 0, y: -4 }}
@@ -357,35 +388,65 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
                 )}
               </motion.div>
             </AnimatePresence>
+            ) : (
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center gap-2 text-default-600">
+                  <span className="font-semibold">ID:</span>
+                  <span className="font-mono text-xs">{node.id}</span>
+                </div>
+                <div className="flex items-center gap-2 text-default-600">
+                  <span className="font-semibold">Job:</span>
+                  <span className="font-mono text-xs">{node.jobId}</span>
+                </div>
+                <div className="flex items-center gap-2 text-default-600">
+                  <span className="font-semibold">Scope:</span>
+                  <span className="font-mono text-xs">{node.scopeId}</span>
+                </div>
+                {node.parentId && (
+                  <div className="flex items-center gap-2 text-default-600">
+                    <span className="font-semibold">Parent:</span>
+                    <span className="font-mono text-xs">{node.parentId}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Progress Bar for Active State */}
-            <AnimatePresence>
-              {node.state === 'ACTIVE' && (
-                <motion.div 
-                  className="mt-3 h-1 overflow-hidden rounded-full bg-default-200"
-                  initial={{ opacity: 0, scaleX: 0 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  exit={{ opacity: 0, scaleX: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
+            {shouldAnimate ? (
+              <AnimatePresence>
+                {node.state === 'ACTIVE' && (
                   <motion.div
-                    className="h-full bg-primary"
-                    animate={{
-                      x: ['-100%', '100%'],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                    style={{ width: '50%' }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    className="mt-3 h-1 overflow-hidden rounded-full bg-default-200"
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    exit={{ opacity: 0, scaleX: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <motion.div
+                      className="h-full bg-primary"
+                      animate={{
+                        x: ['-100%', '100%'],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
+                      style={{ width: '50%' }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            ) : (
+              node.state === 'ACTIVE' && (
+                <div className="mt-3 h-1 overflow-hidden rounded-full bg-default-200">
+                  <div className="h-full bg-primary" style={{ width: '50%' }} />
+                </div>
+              )
+            )}
           </div>
-        </motion.div>
-      </motion.div>
+        </CardComponent>
+      </WrapperComponent>
 
       {/* Children */}
       {hasChildren && (

@@ -3,6 +3,8 @@ import { Card, CardBody, Chip } from '@heroui/react'
 import { motion } from 'framer-motion'
 import type { CoroutineNode, CoroutineState } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
+import { useAnimationSlot } from '@/lib/animation-throttle'
+import { fadeSlideIn, pulseActive, pulseWaiting, shakeError } from '@/lib/animation-variants'
 import { FiCircle, FiCheckCircle, FiXCircle, FiPlay, FiClock, FiPause, FiAlertCircle } from 'react-icons/fi'
 
 interface CoroutineTreeProps {
@@ -38,76 +40,71 @@ interface TreeNodeProps {
 
 function TreeNode({ node, depth }: TreeNodeProps) {
   const stateConfig = getStateConfig(node.state)
-  
+  const shouldAnimate = useAnimationSlot()
+
   // Add pulsing animation for active/waiting states
   const shouldPulse = node.state === 'ACTIVE' || node.state === 'WAITING_FOR_CHILDREN'
-  
+
   // Add shake animation for failed/cancelled states
   const shouldShake = node.state === 'FAILED' || node.state === 'CANCELLED'
 
+  // Determine the pulse variant and animate state
+  const pulseVariants = node.state === 'WAITING_FOR_CHILDREN' ? pulseWaiting : pulseActive
+  const pulseAnimateState = node.state === 'WAITING_FOR_CHILDREN' ? 'waiting' : 'active'
+
+  const OuterComponent = shouldAnimate ? motion.div : 'div'
+  const PulseComponent = shouldAnimate ? motion.div : 'div'
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ 
-        opacity: 1, 
-        x: 0,
-        scale: shouldShake ? [1, 1.02, 0.98, 1] : 1
-      }}
-      transition={{ 
-        delay: depth * 0.05,
-        scale: shouldShake ? { 
-          duration: 0.5, 
-          repeat: 2,
-          ease: "easeInOut" 
-        } : {}
-      }}
+    <OuterComponent
+      {...(shouldAnimate
+        ? {
+            variants: shouldShake ? shakeError : fadeSlideIn,
+            initial: shouldShake ? 'idle' : 'hidden',
+            animate: shouldShake ? 'error' : 'visible',
+            custom: depth,
+          }
+        : {})}
       style={{ marginLeft: `${depth * 24}px` }}
     >
-      <motion.div
-        animate={
-          shouldPulse 
-            ? {
-                boxShadow: [
-                  '0 0 0 0 rgba(99, 102, 241, 0)',
-                  '0 0 0 4px rgba(99, 102, 241, 0.1)',
-                  '0 0 0 0 rgba(99, 102, 241, 0)',
-                ],
-              }
-            : {}
-        }
-        transition={
-          shouldPulse
-            ? {
-                duration: node.state === 'WAITING_FOR_CHILDREN' ? 2.5 : 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }
-            : {}
-        }
+      <PulseComponent
+        {...(shouldAnimate && shouldPulse
+          ? {
+              variants: pulseVariants,
+              initial: 'idle',
+              animate: pulseAnimateState,
+            }
+          : {})}
       >
         <Card className="mb-2" shadow="sm">
           <CardBody className="py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <motion.div 
-                  className={stateConfig.color}
-                  animate={
-                    node.state === 'ACTIVE'
-                      ? { rotate: 360 }
-                      : node.state === 'WAITING_FOR_CHILDREN'
-                      ? { scale: [1, 1.1, 1] }
-                      : {}
-                  }
-                  transition={
-                    node.state === 'ACTIVE'
-                      ? { duration: 2, repeat: Infinity, ease: 'linear' }
-                      : node.state === 'WAITING_FOR_CHILDREN'
-                      ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
-                      : {}
-                  }
-                >
-                  {stateConfig.icon}
-                </motion.div>
+                {shouldAnimate ? (
+                  <motion.div
+                    className={stateConfig.color}
+                    animate={
+                      node.state === 'ACTIVE'
+                        ? { rotate: 360 }
+                        : node.state === 'WAITING_FOR_CHILDREN'
+                        ? { scale: [1, 1.1, 1] }
+                        : {}
+                    }
+                    transition={
+                      node.state === 'ACTIVE'
+                        ? { duration: 2, repeat: Infinity, ease: 'linear' }
+                        : node.state === 'WAITING_FOR_CHILDREN'
+                        ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+                        : {}
+                    }
+                  >
+                    {stateConfig.icon}
+                  </motion.div>
+                ) : (
+                  <div className={stateConfig.color}>
+                    {stateConfig.icon}
+                  </div>
+                )}
                 <div>
                   <div className="font-semibold">
                     {node.label || node.id}
@@ -246,12 +243,12 @@ function TreeNode({ node, depth }: TreeNodeProps) {
             )}
           </CardBody>
         </Card>
-      </motion.div>
+      </PulseComponent>
 
       {node.children.map(child => (
         <TreeNode key={child.id} node={child} depth={depth + 1} />
       ))}
-    </motion.div>
+    </OuterComponent>
   )
 }
 

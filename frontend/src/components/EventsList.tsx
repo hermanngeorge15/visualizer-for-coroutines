@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Card, CardBody, Chip, Input, Tooltip } from '@heroui/react'
 import { motion, AnimatePresence } from 'framer-motion'
+import type { HTMLMotionProps } from 'framer-motion'
 import type {
   VizEvent,
   JobStateChangedEvent,
@@ -14,6 +16,7 @@ import type {
   CoroutineSuspendedEvent
 } from '@/types/api'
 import { formatNanoTime, formatRelativeTime } from '@/lib/utils'
+import { useAnimationSlot } from '@/lib/animation-throttle'
 import { FiSearch, FiClock, FiServer, FiDatabase, FiMail, FiCloud, FiActivity } from 'react-icons/fi'
 import { DispatcherBadge } from './DispatcherBadge'
 
@@ -68,6 +71,26 @@ function getServiceIcon(service: string): React.ReactNode {
   return <FiServer className="w-3 h-3" />
 }
 
+/**
+ * Wrapper that claims an animation slot before rendering a motion.div.
+ * When the slot limit is reached, renders a plain div instead.
+ */
+function AnimatedEventItem({
+  children,
+  className,
+  ...motionProps
+}: { children: ReactNode; className?: string } & HTMLMotionProps<'div'>) {
+  const shouldAnimate = useAnimationSlot()
+  if (!shouldAnimate) {
+    return <div className={className}>{children}</div>
+  }
+  return (
+    <motion.div className={className} {...motionProps}>
+      {children}
+    </motion.div>
+  )
+}
+
 export function EventsList({ events }: EventsListProps) {
   const [filter, setFilter] = useState('')
 
@@ -112,7 +135,7 @@ export function EventsList({ events }: EventsListProps) {
       <div className="space-y-2">
         <AnimatePresence mode="popLayout">
           {sortedEvents.map((event, idx) => (
-            <motion.div
+            <AnimatedEventItem
               key={`${event.sessionId}-${event.seq}`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -372,7 +395,7 @@ export function EventsList({ events }: EventsListProps) {
                   )}
                 </CardBody>
               </Card>
-            </motion.div>
+            </AnimatedEventItem>
           ))}
         </AnimatePresence>
       </div>

@@ -13,6 +13,10 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 
+vi.mock('@/lib/animation-throttle', () => ({
+  useAnimationSlot: () => false,
+}))
+
 vi.mock('react-zoom-pan-pinch', () => ({
   TransformWrapper: ({ children }: Record<string, unknown>) => (
     <div>{typeof children === 'function' ? children({

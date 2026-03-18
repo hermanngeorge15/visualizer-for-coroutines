@@ -15,6 +15,10 @@ vi.mock('@/lib/api-client', () => ({
   },
 }))
 
+vi.mock('@/lib/animation-throttle', () => ({
+  useAnimationSlot: () => false,
+}))
+
 const mockedApiClient = vi.mocked(apiClient)
 
 function createWrapper() {

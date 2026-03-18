@@ -1,8 +1,48 @@
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 import type { FlowState } from '@/hooks/use-flow-events'
+import { useAnimationSlot } from '@/lib/animation-throttle'
+import { rippleEmit } from '@/lib/animation-variants'
 
 interface SharedFlowPanelProps {
   flow: FlowState
+}
+
+/**
+ * Wrapper for each emission row that plays the rippleEmit animation
+ * when an animation slot is available.
+ */
+function EmissionRow({
+  emission,
+}: {
+  emission: FlowState['sharedEmissions'][number]
+}) {
+  const shouldAnimate = useAnimationSlot()
+  const Component = shouldAnimate ? motion.div : 'div'
+
+  return (
+    <Component
+      {...(shouldAnimate
+        ? {
+            variants: rippleEmit,
+            initial: 'idle',
+            animate: 'emit',
+          }
+        : {})}
+      className="flex items-center justify-between rounded bg-default-50 px-2 py-1 text-xs"
+      data-testid="shared-emission-row"
+    >
+      <span className="font-mono truncate">{emission.valuePreview}</span>
+      <div className="flex gap-2 shrink-0">
+        <Chip size="sm" variant="bordered" color="default">
+          replay: {emission.replayCache}
+        </Chip>
+        <Chip size="sm" variant="bordered" color="default">
+          buffer: {emission.extraBufferCapacity}
+        </Chip>
+      </div>
+    </Component>
+  )
 }
 
 export function SharedFlowPanel({ flow }: SharedFlowPanelProps) {
@@ -24,21 +64,10 @@ export function SharedFlowPanel({ flow }: SharedFlowPanelProps) {
             </div>
             <div className="space-y-1 max-h-48 overflow-y-auto">
               {flow.sharedEmissions.slice(-10).map((emission, idx) => (
-                <div
+                <EmissionRow
                   key={`${emission.seq}-${idx}`}
-                  className="flex items-center justify-between rounded bg-default-50 px-2 py-1 text-xs"
-                  data-testid="shared-emission-row"
-                >
-                  <span className="font-mono truncate">{emission.valuePreview}</span>
-                  <div className="flex gap-2 shrink-0">
-                    <Chip size="sm" variant="bordered" color="default">
-                      replay: {emission.replayCache}
-                    </Chip>
-                    <Chip size="sm" variant="bordered" color="default">
-                      buffer: {emission.extraBufferCapacity}
-                    </Chip>
-                  </div>
-                </div>
+                  emission={emission}
+                />
               ))}
             </div>
           </div>
