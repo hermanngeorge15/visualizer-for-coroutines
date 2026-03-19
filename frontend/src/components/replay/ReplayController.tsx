@@ -6,8 +6,9 @@
  */
 
 import { Button, Slider, ButtonGroup, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
-import { motion } from 'framer-motion'
+import { motion, useMotionValueEvent } from 'framer-motion'
 import { FiPlay, FiPause, FiSkipBack, FiSkipForward, FiRotateCcw } from 'react-icons/fi'
+import { useReplayMotion } from '@/hooks/use-replay-motion'
 import type { UseReplayReturn } from '@/hooks/use-replay'
 
 interface ReplayControllerProps {
@@ -38,6 +39,12 @@ export function ReplayController({ replay }: ReplayControllerProps) {
   } = replay
 
   const isEmpty = totalEvents === 0
+  const { progress: motionProgress } = useReplayMotion({ currentIndex, totalEvents })
+
+  // Track smooth progress for the bar width
+  useMotionValueEvent(motionProgress, 'change', () => {
+    // Motion values update the bar automatically via the motion.div style prop
+  })
 
   return (
     <motion.div
@@ -134,10 +141,11 @@ export function ReplayController({ replay }: ReplayControllerProps) {
         </Dropdown>
       </div>
 
-      {/* Progress indicator bar (visual only) */}
-      <div className="h-1 w-full overflow-hidden rounded-full bg-default-200">
+      {/* Progress indicator bar — smoothly interpolated via motionProgress */}
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-default-200">
         <motion.div
           className="h-full rounded-full bg-primary"
+          style={{ width: motionProgress.get() > 0 ? `${motionProgress.get() * 100}%` : '0%' }}
           initial={false}
           animate={{ width: `${progress * 100}%` }}
           transition={{ duration: 0.15, ease: 'easeOut' }}

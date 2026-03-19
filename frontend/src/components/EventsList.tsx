@@ -16,7 +16,7 @@ import type {
   CoroutineSuspendedEvent
 } from '@/types/api'
 import { formatNanoTime, formatRelativeTime } from '@/lib/utils'
-import { useAnimationSlot } from '@/lib/animation-throttle'
+import { useAnimatedInView } from '@/hooks/use-animated-in-view'
 import { FiSearch, FiClock, FiServer, FiDatabase, FiMail, FiCloud, FiActivity } from 'react-icons/fi'
 import { DispatcherBadge } from './DispatcherBadge'
 
@@ -80,12 +80,13 @@ function AnimatedEventItem({
   className,
   ...motionProps
 }: { children: ReactNode; className?: string } & HTMLMotionProps<'div'>) {
-  const shouldAnimate = useAnimationSlot()
+  const { ref, shouldAnimate } = useAnimatedInView()
   if (!shouldAnimate) {
-    return <div className={className}>{children}</div>
+    return <div ref={ref} className={className}>{children}</div>
   }
   return (
     <motion.div
+      ref={ref}
       className={className}
       whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.03)' }}
       {...motionProps}
