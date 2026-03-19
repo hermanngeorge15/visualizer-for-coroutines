@@ -11,6 +11,7 @@ vi.mock('framer-motion', () => ({
     span: ({ children, ...props }: Record<string, unknown>) => <span {...props}>{children as ReactNode}</span>,
   },
   AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
+  LayoutGroup: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 
 vi.mock('@/lib/animation-throttle', () => ({

@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { Card, CardBody, Chip } from '@heroui/react'
-import { motion } from 'framer-motion'
+import { motion, LayoutGroup } from 'framer-motion'
 import type { CoroutineNode, CoroutineState } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
 import { useAnimationSlot } from '@/lib/animation-throttle'
 import { fadeSlideIn, getStateVariant } from '@/lib/animation-variants'
 import { getStateColors, isActiveState } from '@/lib/coroutine-state-colors'
+import { layoutSpring } from '@/lib/layout-transition'
 
 interface CoroutineTreeProps {
   coroutines: CoroutineNode[]
@@ -23,11 +24,13 @@ export function CoroutineTree({ coroutines }: CoroutineTreeProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {tree.map(node => (
-        <TreeNode key={node.id} node={node} depth={0} />
-      ))}
-    </div>
+    <LayoutGroup>
+      <div className="space-y-4">
+        {tree.map(node => (
+          <TreeNode key={node.id} node={node} depth={0} />
+        ))}
+      </div>
+    </LayoutGroup>
   )
 }
 
@@ -53,10 +56,13 @@ function TreeNode({ node, depth }: TreeNodeProps) {
     <OuterComponent
       {...(shouldAnimate
         ? {
+            layout: true,
+            layoutId: `tree-node-${node.id}`,
             variants: shouldShake ? stateVariant?.variants : fadeSlideIn,
             initial: shouldShake ? stateVariant?.initial : 'hidden',
             animate: shouldShake ? stateVariant?.animate : 'visible',
             custom: depth,
+            transition: { layout: layoutSpring },
           }
         : {})}
       style={{ marginLeft: `${depth * 24}px` }}

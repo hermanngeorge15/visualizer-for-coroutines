@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { Button, Chip } from '@heroui/react'
 import type { CoroutineNode } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
 import { useAnimationSlot } from '@/lib/animation-throttle'
 import { getStateColors, isActiveState } from '@/lib/coroutine-state-colors'
+import { layoutSpring, connectorSpring } from '@/lib/layout-transition'
 import { FiLoader, FiZoomIn, FiZoomOut, FiMaximize, FiLock, FiUnlock } from 'react-icons/fi'
 
 interface CoroutineTreeGraphProps {
@@ -151,19 +152,21 @@ export function CoroutineTreeGraph({ coroutines }: CoroutineTreeGraphProps) {
               wrapperStyle={{ width: '100%', height: '100%', minHeight: '600px' }}
               contentStyle={{ width: '100%', height: '100%' }}
             >
-              <div className="flex flex-col items-center gap-16 p-8 min-h-[600px]">
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {tree.map((node, index) => (
-                    <TreeNodeComponent 
-                      key={node.id} 
-                      node={node} 
-                      isRoot 
-                      level={0} 
-                      siblingIndex={index} 
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
+              <LayoutGroup>
+                <div className="flex flex-col items-center gap-16 p-8 min-h-[600px]">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {tree.map((node, index) => (
+                      <TreeNodeComponent
+                        key={node.id}
+                        node={node}
+                        isRoot
+                        level={0}
+                        siblingIndex={index}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </LayoutGroup>
             </TransformComponent>
           </>
         )}
@@ -190,16 +193,17 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
   const CardComponent = shouldAnimate ? motion.div : 'div'
 
   return (
-    <div className="flex flex-col items-center">
+    <motion.div layout layoutId={`node-container-${node.id}`} transition={layoutSpring} className="flex flex-col items-center">
       {/* Connection line from parent - simplified */}
       {!isRoot && (
         <div className="relative flex flex-col items-center">
           {shouldAnimate ? (
             <motion.div
+              layout
               className={`h-12 w-0.5 ${colors.line} rounded-full`}
               initial={{ scaleY: 0 }}
               animate={{ scaleY: 1 }}
-              transition={{ delay: level * 0.1, duration: 0.3 }}
+              transition={{ layout: connectorSpring, delay: level * 0.1, duration: 0.3 }}
             />
           ) : (
             <div className={`h-12 w-0.5 ${colors.line} rounded-full`} />
@@ -228,10 +232,13 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
         {...(shouldAnimate
           ? {
               key: `wrapper-${node.id}`,
+              layout: true,
+              layoutId: `node-card-${node.id}`,
               initial: { scale: 0, opacity: 0 },
               animate: { scale: 1, opacity: 1 },
               exit: { scale: 0.8, opacity: 0 },
               transition: {
+                layout: layoutSpring,
                 delay: level * 0.1 + siblingIndex * 0.05,
                 type: 'spring',
                 stiffness: 200,
@@ -458,10 +465,11 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
             <>
               <div className="relative flex flex-col items-center">
                 <motion.div
+                  layout
                   className={`h-16 w-0.5 ${colors.line} rounded-full`}
                   initial={{ scaleY: 0 }}
                   animate={{ scaleY: 1 }}
-                  transition={{ delay: (level + 1) * 0.1, duration: 0.3 }}
+                  transition={{ layout: connectorSpring, delay: (level + 1) * 0.1, duration: 0.3 }}
                 />
                 {/* Relationship label */}
                 <motion.div
@@ -503,10 +511,11 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
               {/* Main connector line down from parent */}
               <div className="relative flex flex-col items-center">
                 <motion.div
+                  layout
                   className={`h-8 w-0.5 ${colors.line} rounded-full`}
                   initial={{ scaleY: 0 }}
                   animate={{ scaleY: 1 }}
-                  transition={{ delay: (level + 1) * 0.1, duration: 0.3 }}
+                  transition={{ layout: connectorSpring, delay: (level + 1) * 0.1, duration: 0.3 }}
                 />
                 {/* Relationship label */}
                 <motion.div
@@ -523,13 +532,14 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
               <div className="relative flex flex-col items-center" style={{ width: `${node.children.length * 320}px` }}>
                 {/* Horizontal line connecting to all children */}
                 <motion.div
+                  layout
                   className="relative w-full h-0.5 bg-default-300 rounded-full"
-                  style={{ 
+                  style={{
                     width: `${(node.children.length - 1) * 320}px`,
                   }}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ delay: (level + 1) * 0.1 + 0.2, duration: 0.4 }}
+                  transition={{ layout: connectorSpring, delay: (level + 1) * 0.1 + 0.2, duration: 0.4 }}
                 />
                 
                 {/* Junction point at center */}
@@ -590,8 +600,6 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
           )}
         </>
       )}
-    </div>
+    </motion.div>
   )
 }
-
-
