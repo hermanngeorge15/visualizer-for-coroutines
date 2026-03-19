@@ -85,7 +85,11 @@ function AnimatedEventItem({
     return <div className={className}>{children}</div>
   }
   return (
-    <motion.div className={className} {...motionProps}>
+    <motion.div
+      className={className}
+      whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.03)' }}
+      {...motionProps}
+    >
       {children}
     </motion.div>
   )

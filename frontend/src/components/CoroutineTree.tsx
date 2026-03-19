@@ -4,7 +4,7 @@ import { motion, LayoutGroup } from 'framer-motion'
 import type { CoroutineNode, CoroutineState } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
 import { useAnimationSlot } from '@/lib/animation-throttle'
-import { fadeSlideIn, getStateVariant } from '@/lib/animation-variants'
+import { fadeSlideIn, getStateVariant, hoverGlow } from '@/lib/animation-variants'
 import { getStateColors, isActiveState } from '@/lib/coroutine-state-colors'
 import { layoutSpring } from '@/lib/layout-transition'
 
@@ -73,7 +73,10 @@ function TreeNode({ node, depth }: TreeNodeProps) {
               variants: stateVariant.variants,
               initial: stateVariant.initial,
               animate: stateVariant.animate,
+              whileHover: hoverGlow,
             }
+          : shouldAnimate
+          ? { whileHover: hoverGlow }
           : {})}
       >
         <Card className="mb-2" shadow="sm">

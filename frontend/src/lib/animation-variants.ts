@@ -321,6 +321,72 @@ export const staggerFast: Variants = {
 }
 
 // ---------------------------------------------------------------------------
+// Micro-interaction presets
+// ---------------------------------------------------------------------------
+
+/** Lift + shadow on hover. Apply via whileHover={hoverLift}. */
+export const hoverLift = {
+  y: -4,
+  boxShadow: '0 8px 25px -5px rgba(0, 0, 0, 0.15)',
+  transition: { type: 'spring', stiffness: 400, damping: 25 },
+}
+
+/** Subtle press on tap. Apply via whileTap={tapPress}. */
+export const tapPress = {
+  scale: 0.97,
+  transition: { duration: 0.1 },
+}
+
+/** Very subtle scale on hover for tree/graph nodes. */
+export const hoverGlow = {
+  scale: 1.01,
+  transition: { type: 'spring', stiffness: 400, damping: 25 },
+}
+
+// ---------------------------------------------------------------------------
+// Stagger presets for specific contexts
+// ---------------------------------------------------------------------------
+
+/** Fast stagger for spawning children (0.03s). */
+export const staggerSpawnChildren: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.03 },
+  },
+}
+
+/** Slower stagger for error propagation visuals (0.15s). */
+export const staggerErrorPropagation: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15 },
+  },
+}
+
+/** Medium stagger for flow value traces (0.06s). */
+export const staggerFlowValues: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06 },
+  },
+}
+
+/** Adaptive stagger — reduces delay when list is long. */
+export function staggerAdaptive(count: number): Variants {
+  const delay = Math.max(0.01, 0.08 / Math.sqrt(Math.max(count, 1)))
+  return {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: delay },
+    },
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Utility transitions
 // ---------------------------------------------------------------------------
 

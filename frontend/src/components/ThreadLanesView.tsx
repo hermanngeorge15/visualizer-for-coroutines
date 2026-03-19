@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { motion } from 'framer-motion'
 import { useThreadLanesByDispatcher, useThreadUtilizationStats } from '@/hooks/use-thread-activity'
 import { formatNanoTime } from '@/lib/utils'
 import { useMemo } from 'react'
@@ -145,9 +146,11 @@ function ThreadLane({ lane }: { lane: ThreadLaneData }) {
 
       {/* Utilization Bar */}
       <div className="h-2 bg-default-100 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary transition-all"
-          style={{ width: `${lane.utilization * 100}%` }}
+        <motion.div
+          className="h-full bg-primary"
+          initial={{ width: 0 }}
+          animate={{ width: `${lane.utilization * 100}%` }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
         />
       </div>
 
@@ -193,13 +196,24 @@ function ThreadSegmentBar({
   const bgColor = segment.state === 'ACTIVE' ? 'bg-success' : 'bg-warning'
   const hoverColor = segment.state === 'ACTIVE' ? 'hover:bg-success-600' : 'hover:bg-warning-600'
 
+  const isActive = segment.state === 'ACTIVE'
+
   return (
-    <div
-      className={`absolute h-full ${bgColor} ${hoverColor} transition-colors cursor-pointer group`}
+    <motion.div
+      className={`absolute h-full ${bgColor} ${hoverColor} cursor-pointer group`}
       style={{
         left: `${startPercent}%`,
-        width: `${widthPercent}%`
       }}
+      initial={{ width: 0, opacity: 0 }}
+      animate={{
+        width: `${widthPercent}%`,
+        opacity: isActive ? [0.7, 1, 0.7] : 0.6,
+      }}
+      transition={
+        isActive
+          ? { width: { duration: 0.4, ease: 'easeOut' }, opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' } }
+          : { duration: 0.4, ease: 'easeOut' }
+      }
       title={`${segment.coroutineName || segment.coroutineId} - ${segment.state}`}
     >
       {/* Tooltip on hover */}
@@ -210,7 +224,7 @@ function ThreadSegmentBar({
           {formatNanoTime(segment.endNanos ? segment.endNanos - segment.startNanos : 0)}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
