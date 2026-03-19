@@ -5,6 +5,7 @@
  * Pattern reference: CoroutineTree.tsx pulse and shake animations.
  */
 import type { Variants, Transition } from 'framer-motion'
+import { getStateColors } from '@/lib/coroutine-state-colors'
 
 // ---------------------------------------------------------------------------
 // Entrance / Exit
@@ -113,29 +114,26 @@ export const dimCancelled: Variants = {
   },
 }
 
+/** Maps StateAnimation values to their variant + animate key. */
+const animationVariantMap: Record<string, { variants: Variants; initial: string; animate: string }> = {
+  'pulse-fast': { variants: pulseActive, initial: 'idle', animate: 'active' },
+  'pulse-slow': { variants: pulseSuspended, initial: 'idle', animate: 'suspended' },
+  'pulse-medium': { variants: pulseWaitingForChildren, initial: 'idle', animate: 'waiting' },
+  'fade-once': { variants: fadeCompleted, initial: 'idle', animate: 'completed' },
+  'dim': { variants: dimCancelled, initial: 'idle', animate: 'cancelled' },
+  'shake': { variants: shakeError, initial: 'idle', animate: 'error' },
+}
+
 /**
  * Returns the appropriate framer-motion variant + animate key for a given
- * coroutine state. Returns null for states with no animation (CREATED).
+ * coroutine state. Reads the animation type from the centralized color config
+ * so the mapping is never duplicated. Returns null for 'none' animations.
  */
 export function getStateVariant(
   state: string
 ): { variants: Variants; initial: string; animate: string } | null {
-  switch (state) {
-    case 'ACTIVE':
-      return { variants: pulseActive, initial: 'idle', animate: 'active' }
-    case 'SUSPENDED':
-      return { variants: pulseSuspended, initial: 'idle', animate: 'suspended' }
-    case 'WAITING_FOR_CHILDREN':
-      return { variants: pulseWaitingForChildren, initial: 'idle', animate: 'waiting' }
-    case 'COMPLETED':
-      return { variants: fadeCompleted, initial: 'idle', animate: 'completed' }
-    case 'CANCELLED':
-      return { variants: dimCancelled, initial: 'idle', animate: 'cancelled' }
-    case 'FAILED':
-      return { variants: shakeError, initial: 'idle', animate: 'error' }
-    default:
-      return null
-  }
+  const { animation } = getStateColors(state)
+  return animationVariantMap[animation] ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -341,49 +339,6 @@ export const tapPress = {
 export const hoverGlow = {
   scale: 1.01,
   transition: { type: 'spring', stiffness: 400, damping: 25 },
-}
-
-// ---------------------------------------------------------------------------
-// Stagger presets for specific contexts
-// ---------------------------------------------------------------------------
-
-/** Fast stagger for spawning children (0.03s). */
-export const staggerSpawnChildren: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.03 },
-  },
-}
-
-/** Slower stagger for error propagation visuals (0.15s). */
-export const staggerErrorPropagation: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 },
-  },
-}
-
-/** Medium stagger for flow value traces (0.06s). */
-export const staggerFlowValues: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
-  },
-}
-
-/** Adaptive stagger — reduces delay when list is long. */
-export function staggerAdaptive(count: number): Variants {
-  const delay = Math.max(0.01, 0.08 / Math.sqrt(Math.max(count, 1)))
-  return {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: delay },
-    },
-  }
 }
 
 // ---------------------------------------------------------------------------

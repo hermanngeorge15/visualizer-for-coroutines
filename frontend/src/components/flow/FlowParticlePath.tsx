@@ -14,7 +14,8 @@ interface FlowParticlePathProps {
 const NODE_RADIUS = 18
 const NODE_GAP = 120
 const SVG_PADDING = 40
-const PARTICLE_RADIUS = 5
+/** Initial radius for animated particles (variants animate r from this value). */
+const PARTICLE_R_INITIAL = 5
 
 function getOperatorFill(name: string): string {
   const lower = name.toLowerCase()
@@ -52,7 +53,7 @@ export function FlowParticlePath({ flow }: FlowParticlePathProps) {
       }
     }
     return positions
-  }, [operators, nodeCount])
+  }, [operators])
 
   // Build the path d attribute connecting all nodes
   const pathD = useMemo(() => {
@@ -131,7 +132,7 @@ export function FlowParticlePath({ flow }: FlowParticlePathProps) {
               return (
                 <motion.circle
                   key={`particle-${trace.sequenceNumber}-${idx}`}
-                  r={PARTICLE_RADIUS}
+                  r={PARTICLE_R_INITIAL}
                   fill="#f59e0b"
                   variants={flowParticleFiltered}
                   initial="enter"
@@ -146,7 +147,7 @@ export function FlowParticlePath({ flow }: FlowParticlePathProps) {
               return (
                 <motion.circle
                   key={`particle-${trace.sequenceNumber}-${idx}`}
-                  r={PARTICLE_RADIUS}
+                  r={PARTICLE_R_INITIAL}
                   variants={flowParticleTransform}
                   initial="enter"
                   animate="animate"
@@ -159,7 +160,7 @@ export function FlowParticlePath({ flow }: FlowParticlePathProps) {
             return (
               <motion.circle
                 key={`particle-${trace.sequenceNumber}-${idx}`}
-                r={PARTICLE_RADIUS}
+                r={PARTICLE_R_INITIAL}
                 fill="#6366f1"
                 variants={flowParticle}
                 initial="enter"

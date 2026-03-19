@@ -30,18 +30,15 @@ export function useReplayMotion({ currentIndex, totalEvents }: UseReplayMotionOp
   // Derived: 0→1 normalized progress
   const progress = useTransform(motionIndex, [0, Math.max(totalEvents - 1, 1)], [0, 1])
 
-  // Derived: opacity for "future" events (events past the scrub position)
-  // Returns a function: (eventIndex) => opacity (0.3 for future, 1 for current/past)
-  const futureOpacity = useTransform(motionIndex, (latest: number) => {
-    return (eventIndex: number) => (eventIndex > latest ? 0.3 : 1)
-  })
+  // Derived: CSS width string for the progress bar (reactive via MotionValue)
+  const progressWidth = useTransform(progress, (v: number) => `${v * 100}%`)
 
   return {
     /** Smooth-animated index value. */
     motionIndex,
     /** 0→1 progress across all events. */
     progress,
-    /** Function that returns opacity for an event at a given index. */
-    futureOpacity,
+    /** CSS width string driven by the smooth progress MotionValue. */
+    progressWidth,
   }
 }

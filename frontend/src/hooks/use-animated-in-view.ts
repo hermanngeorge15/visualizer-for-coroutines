@@ -25,10 +25,11 @@ export function useAnimatedInView(options: UseAnimatedInViewOptions = {}) {
   const { margin = '100px' as const, once = true } = options
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { margin, once })
-  const slotAvailable = useAnimationSlot()
+  // Only claim an animation slot when the element is in view
+  const slotAvailable = useAnimationSlot(isInView)
 
   return {
     ref,
-    shouldAnimate: isInView && slotAvailable,
+    shouldAnimate: slotAvailable,
   }
 }

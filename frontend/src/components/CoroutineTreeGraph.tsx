@@ -284,7 +284,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
             <AnimatePresence>
               {isRunning(node.state) && (
                 <motion.div
-                  className="absolute inset-0 rounded-2xl bg-primary/5"
+                  className={`absolute inset-0 rounded-2xl ${colors.bgTint}`}
                   initial={{ opacity: 0 }}
                   animate={{
                     opacity: node.state === 'WAITING_FOR_CHILDREN' ? [0.2, 0.4, 0.2] : [0.3, 0.6, 0.3],
@@ -300,7 +300,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
             </AnimatePresence>
           ) : (
             isRunning(node.state) && (
-              <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-30" />
+              <div className={`absolute inset-0 rounded-2xl ${colors.bgTint} opacity-30`} />
             )
           )}
 

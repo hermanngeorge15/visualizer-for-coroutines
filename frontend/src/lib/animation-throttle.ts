@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
  *
  * This value is adaptive: the monitor loop reduces it when frame
  * rate drops below 30fps and restores it when above 50fps.
+ * The monitor auto-stops when no animations are active.
  */
 let maxConcurrent = 50
 const MAX_CONCURRENT_CEILING = 50
@@ -30,6 +31,12 @@ function startMonitor() {
 
   const tick = (now: number) => {
     if (!monitorRunning) return
+
+    // Auto-stop when no animations are active
+    if (activeCount === 0) {
+      monitorRunning = false
+      return
+    }
 
     const delta = now - lastFrameTime
     lastFrameTime = now
@@ -55,11 +62,6 @@ function startMonitor() {
   }
 
   requestAnimationFrame(tick)
-}
-
-/** Stop the adaptive frame-rate monitor. */
-export function stopMonitor() {
-  monitorRunning = false
 }
 
 /**
@@ -94,18 +96,44 @@ export function getActiveAnimationCount(): number {
 }
 
 /**
+ * Resets all throttle state to defaults. Intended for test cleanup.
+ */
+export function resetThrottle(): void {
+  activeCount = 0
+  maxConcurrent = MAX_CONCURRENT_CEILING
+  monitorRunning = false
+  frameCount = 0
+  fpsAccumulator = 0
+  lastFrameTime = 0
+}
+
+/**
  * React hook that claims an animation slot on mount and releases it on unmount.
+ *
+ * @param enabled - When false, the slot is never claimed (returns false).
+ *   This allows callers like `useAnimatedInView` to defer the slot claim
+ *   until the element is actually in the viewport.
  *
  * Returns `true` if the component should animate (slot was available and the
  * user has not enabled `prefers-reduced-motion`). Returns `false` if the
  * animation limit has been reached or reduced motion is preferred -- in that
  * case the component should render its final state immediately.
  */
-export function useAnimationSlot(): boolean {
+export function useAnimationSlot(enabled: boolean = true): boolean {
   const [shouldAnimate, setShouldAnimate] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
+    if (!enabled) {
+      // Release any previously claimed slot
+      if (cleanupRef.current) {
+        cleanupRef.current()
+        cleanupRef.current = null
+      }
+      setShouldAnimate(false)
+      return
+    }
+
     // Respect prefers-reduced-motion
     const prefersReduced =
       typeof window !== 'undefined' &&
@@ -130,7 +158,7 @@ export function useAnimationSlot(): boolean {
     // Limit exceeded -- render static
     setShouldAnimate(false)
     return undefined
-  }, [])
+  }, [enabled])
 
   return shouldAnimate
 }

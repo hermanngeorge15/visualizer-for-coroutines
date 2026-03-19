@@ -269,7 +269,7 @@ function JobPropertyBadge({
 }) {
   const getBadgeColor = () => {
     if (!value) return 'default'
-    if (label === 'isCancelled') return 'warning'
+    if (label === 'isCancelled') return 'default'
     if (label === 'isCompleted') return 'success'
     if (label === 'isActive') return 'success'
     return 'default'
