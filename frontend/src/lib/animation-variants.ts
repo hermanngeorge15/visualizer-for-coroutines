@@ -176,6 +176,65 @@ export const rippleEmit: Variants = {
 }
 
 // ---------------------------------------------------------------------------
+// SVG Flow Particle variants (for FlowParticlePath)
+// ---------------------------------------------------------------------------
+
+/** Particle traveling along the operator chain SVG path. */
+export const flowParticle: Variants = {
+  enter: (custom: { startX: number; y: number }) => ({
+    cx: custom.startX,
+    cy: custom.y,
+    opacity: 0,
+    r: 2,
+  }),
+  animate: (custom: { endX: number; y: number; delay?: number }) => ({
+    cx: custom.endX,
+    cy: custom.y,
+    opacity: [0, 1, 1, 0],
+    r: 5,
+    transition: { duration: 1.2, delay: custom.delay ?? 0, ease: 'easeInOut' },
+  }),
+  exit: { opacity: 0, r: 0, transition: { duration: 0.2 } },
+}
+
+/** Filtered value: shrinks and drops off the path. */
+export const flowParticleFiltered: Variants = {
+  enter: (custom: { startX: number; y: number }) => ({
+    cx: custom.startX,
+    cy: custom.y,
+    opacity: 1,
+    r: 5,
+  }),
+  filtered: (custom: { endX: number; y: number }) => ({
+    cx: custom.endX,
+    cy: custom.y + 20,
+    opacity: 0,
+    r: 2,
+    transition: { duration: 0.5, ease: 'easeIn' },
+  }),
+}
+
+/** Transformed value: changes fill color mid-path. */
+export const flowParticleTransform: Variants = {
+  enter: (custom: { startX: number; y: number }) => ({
+    cx: custom.startX,
+    cy: custom.y,
+    opacity: 0,
+    r: 3,
+    fill: '#6366f1', // indigo input
+  }),
+  animate: (custom: { endX: number; y: number }) => ({
+    cx: custom.endX,
+    cy: custom.y,
+    opacity: [0, 1, 1, 0],
+    r: 5,
+    fill: ['#6366f1', '#6366f1', '#10b981', '#10b981'], // indigo → emerald
+    transition: { duration: 1.2, ease: 'easeInOut' },
+  }),
+  exit: { opacity: 0, r: 0, transition: { duration: 0.2 } },
+}
+
+// ---------------------------------------------------------------------------
 // Gauges & Bars
 // ---------------------------------------------------------------------------
 
