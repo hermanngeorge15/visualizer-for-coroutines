@@ -5,7 +5,8 @@ import { Button, Chip } from '@heroui/react'
 import type { CoroutineNode } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
 import { useAnimationSlot } from '@/lib/animation-throttle'
-import { FiCircle, FiCheckCircle, FiXCircle, FiLoader, FiClock, FiPause, FiAlertCircle, FiZoomIn, FiZoomOut, FiMaximize, FiLock, FiUnlock } from 'react-icons/fi'
+import { getStateColors, isActiveState } from '@/lib/coroutine-state-colors'
+import { FiLoader, FiZoomIn, FiZoomOut, FiMaximize, FiLock, FiUnlock } from 'react-icons/fi'
 
 interface CoroutineTreeGraphProps {
   coroutines: CoroutineNode[]
@@ -15,8 +16,8 @@ interface TreeNode extends CoroutineNode {
   children: TreeNode[]
 }
 
-// Helper function to check if a coroutine is running
-const isRunning = (state: string) => state === 'ACTIVE' || state === 'WAITING_FOR_CHILDREN'
+// Re-alias for local readability
+const isRunning = isActiveState
 
 export function CoroutineTreeGraph({ coroutines }: CoroutineTreeGraphProps) {
   const tree = useMemo(() => buildCoroutineTree(coroutines), [coroutines])
@@ -179,10 +180,11 @@ interface TreeNodeComponentProps {
 }
 
 function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNodeComponentProps) {
-  const stateConfig = getStateConfig(node.state)
+  const colors = getStateColors(node.state)
   const hasChildren = node.children.length > 0
-  const parentConfig = getStateConfig(node.state)
   const shouldAnimate = useAnimationSlot()
+  // Use FiLoader for ACTIVE (rotation animation) — override the default FiPlay
+  const StateIcon = node.state === 'ACTIVE' ? FiLoader : colors.Icon
 
   const WrapperComponent = shouldAnimate ? motion.div : 'div'
   const CardComponent = shouldAnimate ? motion.div : 'div'
@@ -194,13 +196,13 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
         <div className="relative flex flex-col items-center">
           {shouldAnimate ? (
             <motion.div
-              className={`h-12 w-0.5 ${parentConfig.lineColor} rounded-full`}
+              className={`h-12 w-0.5 ${colors.line} rounded-full`}
               initial={{ scaleY: 0 }}
               animate={{ scaleY: 1 }}
               transition={{ delay: level * 0.1, duration: 0.3 }}
             />
           ) : (
-            <div className={`h-12 w-0.5 ${parentConfig.lineColor} rounded-full`} />
+            <div className={`h-12 w-0.5 ${colors.line} rounded-full`} />
           )}
           {/* Animated flow particles for running states */}
           {shouldAnimate && isRunning(node.state) && (
@@ -266,7 +268,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
           className={`
             relative rounded-2xl border-2 bg-content1 p-6 shadow-lg
             transition-all hover:shadow-2xl
-            ${stateConfig.borderColor}
+            ${colors.border}
           `}
           style={{ minWidth: '280px' }}
         >
@@ -301,7 +303,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
               {shouldAnimate ? (
                 <motion.div
                   key={`icon-${node.id}-${node.state}`}
-                  className={`${stateConfig.iconColor} flex h-10 w-10 items-center justify-center rounded-full ${stateConfig.iconBg}`}
+                  className={`${colors.text} flex h-10 w-10 items-center justify-center rounded-full ${colors.iconBg}`}
                   initial={false}
                   animate={
                     node.state === 'ACTIVE'
@@ -328,13 +330,13 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
                       : {}
                   }
                 >
-                  {stateConfig.icon}
+                  <StateIcon className="h-5 w-5" />
                 </motion.div>
               ) : (
                 <div
-                  className={`${stateConfig.iconColor} flex h-10 w-10 items-center justify-center rounded-full ${stateConfig.iconBg}`}
+                  className={`${colors.text} flex h-10 w-10 items-center justify-center rounded-full ${colors.iconBg}`}
                 >
-                  {stateConfig.icon}
+                  <StateIcon className="h-5 w-5" />
                 </div>
               )}
               <div className="flex-1">
@@ -456,7 +458,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
             <>
               <div className="relative flex flex-col items-center">
                 <motion.div
-                  className={`h-16 w-0.5 ${stateConfig.lineColor} rounded-full`}
+                  className={`h-16 w-0.5 ${colors.line} rounded-full`}
                   initial={{ scaleY: 0 }}
                   animate={{ scaleY: 1 }}
                   transition={{ delay: (level + 1) * 0.1, duration: 0.3 }}
@@ -501,7 +503,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
               {/* Main connector line down from parent */}
               <div className="relative flex flex-col items-center">
                 <motion.div
-                  className={`h-8 w-0.5 ${stateConfig.lineColor} rounded-full`}
+                  className={`h-8 w-0.5 ${colors.line} rounded-full`}
                   initial={{ scaleY: 0 }}
                   animate={{ scaleY: 1 }}
                   transition={{ delay: (level + 1) * 0.1, duration: 0.3 }}
@@ -543,7 +545,7 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
                   {node.children.map((child, i) => (
                     <div key={i} className="flex-1 flex justify-center relative">
                       <motion.div
-                        className={`w-0.5 h-16 ${getStateConfig(child.state).lineColor} rounded-full`}
+                        className={`w-0.5 h-16 ${getStateColors(child.state).line} rounded-full`}
                         initial={{ scaleY: 0, transformOrigin: 'top' }}
                         animate={{ scaleY: 1 }}
                         transition={{ delay: (level + 1) * 0.1 + 0.4 + i * 0.05 }}
@@ -592,88 +594,4 @@ function TreeNodeComponent({ node, isRoot = false, level, siblingIndex }: TreeNo
   )
 }
 
-function getStateConfig(state: string) {
-  switch (state) {
-    case 'CREATED':
-      return {
-        icon: <FiCircle className="h-5 w-5" />,
-        iconColor: 'text-default-600',
-        iconBg: 'bg-default-100',
-        borderColor: 'border-default-300',
-        lineColor: 'bg-default-300',
-        arrowBg: 'bg-default-200',
-        branchBg: 'bg-default-300',
-      }
-    case 'ACTIVE':
-      return {
-        icon: <FiLoader className="h-5 w-5" />,
-        iconColor: 'text-primary',
-        iconBg: 'bg-primary/10',
-        borderColor: 'border-primary',
-        lineColor: 'bg-primary/40',
-        arrowBg: 'bg-primary/20',
-        branchBg: 'bg-primary/40',
-      }
-    case 'SUSPENDED':
-      return {
-        icon: <FiPause className="h-5 w-5" />,
-        iconColor: 'text-secondary',
-        iconBg: 'bg-secondary/10',
-        borderColor: 'border-secondary',
-        lineColor: 'bg-secondary/40',
-        arrowBg: 'bg-secondary/20',
-        branchBg: 'bg-secondary/40',
-      }
-    case 'WAITING_FOR_CHILDREN':
-      return {
-        icon: <FiClock className="h-5 w-5" />,
-        iconColor: 'text-primary',
-        iconBg: 'bg-primary/10',
-        borderColor: 'border-primary/60',
-        lineColor: 'bg-primary/30',
-        arrowBg: 'bg-primary/15',
-        branchBg: 'bg-primary/30',
-      }
-    case 'COMPLETED':
-      return {
-        icon: <FiCheckCircle className="h-5 w-5" />,
-        iconColor: 'text-success',
-        iconBg: 'bg-success/10',
-        borderColor: 'border-success',
-        lineColor: 'bg-success/40',
-        arrowBg: 'bg-success/20',
-        branchBg: 'bg-success/40',
-      }
-    case 'CANCELLED':
-      return {
-        icon: <FiXCircle className="h-5 w-5" />,
-        iconColor: 'text-warning',
-        iconBg: 'bg-warning/10',
-        borderColor: 'border-warning',
-        lineColor: 'bg-warning/40',
-        arrowBg: 'bg-warning/20',
-        branchBg: 'bg-warning/40',
-      }
-    case 'FAILED':
-      return {
-        icon: <FiAlertCircle className="h-5 w-5" />,
-        iconColor: 'text-danger',
-        iconBg: 'bg-danger/10',
-        borderColor: 'border-danger',
-        lineColor: 'bg-danger/40',
-        arrowBg: 'bg-danger/20',
-        branchBg: 'bg-danger/40',
-      }
-    default:
-      return {
-        icon: <FiCircle className="h-5 w-5" />,
-        iconColor: 'text-default-600',
-        iconBg: 'bg-default-100',
-        borderColor: 'border-default-300',
-        lineColor: 'bg-default-300',
-        arrowBg: 'bg-default-200',
-        branchBg: 'bg-default-300',
-      }
-  }
-}
 

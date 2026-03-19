@@ -60,26 +60,82 @@ export const pulseActive: Variants = {
   },
 }
 
-/** Slower pulsing glow for waiting states (e.g. WAITING_FOR_CHILDREN). */
-export const pulseWaiting: Variants = {
+/** Slow amber pulse for SUSPENDED coroutines (waiting on external). */
+export const pulseSuspended: Variants = {
   idle: {},
-  waiting: {
+  suspended: {
     boxShadow: [
       '0 0 0 0 rgba(245, 158, 11, 0)',
       '0 0 0 4px rgba(245, 158, 11, 0.1)',
       '0 0 0 0 rgba(245, 158, 11, 0)',
     ],
-    transition: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
+    transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
   },
 }
 
-/** Quick shake for error/failure states (e.g. FAILED, CANCELLED). */
+/** Medium purple pulse for WAITING_FOR_CHILDREN (structured concurrency). */
+export const pulseWaitingForChildren: Variants = {
+  idle: {},
+  waiting: {
+    boxShadow: [
+      '0 0 0 0 rgba(168, 85, 247, 0)',
+      '0 0 0 4px rgba(168, 85, 247, 0.12)',
+      '0 0 0 0 rgba(168, 85, 247, 0)',
+    ],
+    transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+  },
+}
+
+/** One-shot fade-to-rest for COMPLETED coroutines. */
+export const fadeCompleted: Variants = {
+  idle: { opacity: 1 },
+  completed: {
+    opacity: [1, 0.7, 1],
+    transition: { duration: 0.8, ease: 'easeOut' },
+  },
+}
+
+/** Quick shake for FAILED states — red flash attention. */
 export const shakeError: Variants = {
   idle: { scale: 1 },
   error: {
     scale: [1, 1.02, 0.98, 1],
     transition: { duration: 0.5, repeat: 2, ease: 'easeInOut' },
   },
+}
+
+/** Dim + strikethrough effect for CANCELLED coroutines. */
+export const dimCancelled: Variants = {
+  idle: { opacity: 1 },
+  cancelled: {
+    opacity: 0.5,
+    transition: { duration: 0.4, ease: 'easeOut' },
+  },
+}
+
+/**
+ * Returns the appropriate framer-motion variant + animate key for a given
+ * coroutine state. Returns null for states with no animation (CREATED).
+ */
+export function getStateVariant(
+  state: string
+): { variants: Variants; initial: string; animate: string } | null {
+  switch (state) {
+    case 'ACTIVE':
+      return { variants: pulseActive, initial: 'idle', animate: 'active' }
+    case 'SUSPENDED':
+      return { variants: pulseSuspended, initial: 'idle', animate: 'suspended' }
+    case 'WAITING_FOR_CHILDREN':
+      return { variants: pulseWaitingForChildren, initial: 'idle', animate: 'waiting' }
+    case 'COMPLETED':
+      return { variants: fadeCompleted, initial: 'idle', animate: 'completed' }
+    case 'CANCELLED':
+      return { variants: dimCancelled, initial: 'idle', animate: 'cancelled' }
+    case 'FAILED':
+      return { variants: shakeError, initial: 'idle', animate: 'error' }
+    default:
+      return null
+  }
 }
 
 // ---------------------------------------------------------------------------
