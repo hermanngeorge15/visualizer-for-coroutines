@@ -2,10 +2,14 @@ import { Chip } from '@heroui/react'
 import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
 import type { FlowOperator } from '@/hooks/use-flow-events'
+import type { FlowState } from '@/hooks/use-flow-events'
+import { FlowParticlePath } from './FlowParticlePath'
 
 interface FlowOperatorChainProps {
   operators: FlowOperator[]
   flowLabel: string | null
+  visualMode?: 'chips' | 'svg'
+  flow?: FlowState
 }
 
 function getOperatorColor(name: string): 'primary' | 'secondary' | 'warning' | 'success' | 'default' {
@@ -17,11 +21,22 @@ function getOperatorColor(name: string): 'primary' | 'secondary' | 'warning' | '
   return 'default'
 }
 
-export function FlowOperatorChain({ operators, flowLabel }: FlowOperatorChainProps) {
+export function FlowOperatorChain({ operators, flowLabel, visualMode = 'chips', flow }: FlowOperatorChainProps) {
   if (operators.length === 0) {
     return (
       <div className="text-xs text-default-400" data-testid="no-operators">
         No operators applied
+      </div>
+    )
+  }
+
+  if (visualMode === 'svg' && flow) {
+    return (
+      <div className="space-y-2" data-testid="flow-operator-chain">
+        {flowLabel && (
+          <div className="text-xs text-default-500 font-mono mb-1">{flowLabel}</div>
+        )}
+        <FlowParticlePath flow={flow} />
       </div>
     )
   }

@@ -1,6 +1,6 @@
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { fadeSlideIn, scaleIn, staggerContainer } from '@/lib/animation-variants'
+import { fadeSlideIn, scaleIn, staggerContainer, shakeError } from '@/lib/animation-variants'
 import { FiCheckCircle, FiXCircle, FiRepeat, FiClock } from 'react-icons/fi'
 
 interface RetryAttempt {
@@ -72,7 +72,9 @@ export function RetryVisualization({ attempts, maxRetries }: RetryVisualizationP
                 <motion.div
                   key={attempt.attemptNumber}
                   className="flex items-center gap-3"
-                  variants={fadeSlideIn}
+                  variants={attempt.success ? fadeSlideIn : shakeError}
+                  initial={attempt.success ? 'hidden' : 'idle'}
+                  animate={attempt.success ? 'visible' : 'error'}
                   custom={attempt.attemptNumber}
                   data-testid={`retry-attempt-${attempt.attemptNumber}`}
                 >

@@ -1,5 +1,7 @@
-import { Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { useState } from 'react'
+import { Card, CardBody, CardHeader, Chip, Divider, Button } from '@heroui/react'
 import { motion } from 'framer-motion'
+import { FiGrid, FiActivity } from 'react-icons/fi'
 import { useFlowEvents } from '@/hooks/use-flow-events'
 import { FlowOperatorChain } from './FlowOperatorChain'
 import { FlowBackpressureIndicator } from './FlowBackpressureIndicator'
@@ -23,6 +25,7 @@ function getFlowTypeColor(flowType: string): 'primary' | 'secondary' | 'warning'
 
 export function FlowPanel({ sessionId }: FlowPanelProps) {
   const { flows, hasBackpressure } = useFlowEvents(sessionId)
+  const [visualMode, setVisualMode] = useState<'chips' | 'svg'>('chips')
 
   if (flows.length === 0) {
     return (
@@ -53,6 +56,19 @@ export function FlowPanel({ sessionId }: FlowPanelProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
+      {/* Visual mode toggle */}
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant={visualMode === 'svg' ? 'solid' : 'flat'}
+          color="primary"
+          startContent={visualMode === 'svg' ? <FiActivity size={14} /> : <FiGrid size={14} />}
+          onPress={() => setVisualMode(m => (m === 'chips' ? 'svg' : 'chips'))}
+        >
+          {visualMode === 'svg' ? 'Particle View' : 'Chip View'}
+        </Button>
+      </div>
+
       {/* Summary statistics */}
       <div className="grid grid-cols-4 gap-3">
         {[
@@ -108,7 +124,7 @@ export function FlowPanel({ sessionId }: FlowPanelProps) {
             </CardHeader>
             <CardBody className="pt-0 space-y-4">
               {/* Operator chain */}
-              <FlowOperatorChain operators={flow.operators} flowLabel={flow.label} />
+              <FlowOperatorChain operators={flow.operators} flowLabel={flow.label} visualMode={visualMode} flow={flow} />
 
               {/* Backpressure warning */}
               <FlowBackpressureIndicator events={flow.backpressureEvents} />

@@ -129,6 +129,7 @@ export function ChannelTimeline({ events }: ChannelTimelineProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: side === 'send' ? -20 : 20 }}
               transition={{ duration: 0.2, delay: index * 0.03 }}
+              whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.03)' }}
             >
               {/* Left (send) column */}
               <div className="flex-1 flex justify-end pr-2">

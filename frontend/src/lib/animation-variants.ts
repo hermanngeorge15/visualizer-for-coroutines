@@ -5,6 +5,7 @@
  * Pattern reference: CoroutineTree.tsx pulse and shake animations.
  */
 import type { Variants, Transition } from 'framer-motion'
+import { getStateColors } from '@/lib/coroutine-state-colors'
 
 // ---------------------------------------------------------------------------
 // Entrance / Exit
@@ -60,26 +61,79 @@ export const pulseActive: Variants = {
   },
 }
 
-/** Slower pulsing glow for waiting states (e.g. WAITING_FOR_CHILDREN). */
-export const pulseWaiting: Variants = {
+/** Slow amber pulse for SUSPENDED coroutines (waiting on external). */
+export const pulseSuspended: Variants = {
   idle: {},
-  waiting: {
+  suspended: {
     boxShadow: [
       '0 0 0 0 rgba(245, 158, 11, 0)',
       '0 0 0 4px rgba(245, 158, 11, 0.1)',
       '0 0 0 0 rgba(245, 158, 11, 0)',
     ],
-    transition: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' },
+    transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
   },
 }
 
-/** Quick shake for error/failure states (e.g. FAILED, CANCELLED). */
+/** Medium purple pulse for WAITING_FOR_CHILDREN (structured concurrency). */
+export const pulseWaitingForChildren: Variants = {
+  idle: {},
+  waiting: {
+    boxShadow: [
+      '0 0 0 0 rgba(168, 85, 247, 0)',
+      '0 0 0 4px rgba(168, 85, 247, 0.12)',
+      '0 0 0 0 rgba(168, 85, 247, 0)',
+    ],
+    transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+  },
+}
+
+/** One-shot fade-to-rest for COMPLETED coroutines. */
+export const fadeCompleted: Variants = {
+  idle: { opacity: 1 },
+  completed: {
+    opacity: [1, 0.7, 1],
+    transition: { duration: 0.8, ease: 'easeOut' },
+  },
+}
+
+/** Quick shake for FAILED states — red flash attention. */
 export const shakeError: Variants = {
   idle: { scale: 1 },
   error: {
     scale: [1, 1.02, 0.98, 1],
     transition: { duration: 0.5, repeat: 2, ease: 'easeInOut' },
   },
+}
+
+/** Dim + strikethrough effect for CANCELLED coroutines. */
+export const dimCancelled: Variants = {
+  idle: { opacity: 1 },
+  cancelled: {
+    opacity: 0.5,
+    transition: { duration: 0.4, ease: 'easeOut' },
+  },
+}
+
+/** Maps StateAnimation values to their variant + animate key. */
+const animationVariantMap: Record<string, { variants: Variants; initial: string; animate: string }> = {
+  'pulse-fast': { variants: pulseActive, initial: 'idle', animate: 'active' },
+  'pulse-slow': { variants: pulseSuspended, initial: 'idle', animate: 'suspended' },
+  'pulse-medium': { variants: pulseWaitingForChildren, initial: 'idle', animate: 'waiting' },
+  'fade-once': { variants: fadeCompleted, initial: 'idle', animate: 'completed' },
+  'dim': { variants: dimCancelled, initial: 'idle', animate: 'cancelled' },
+  'shake': { variants: shakeError, initial: 'idle', animate: 'error' },
+}
+
+/**
+ * Returns the appropriate framer-motion variant + animate key for a given
+ * coroutine state. Reads the animation type from the centralized color config
+ * so the mapping is never duplicated. Returns null for 'none' animations.
+ */
+export function getStateVariant(
+  state: string
+): { variants: Variants; initial: string; animate: string } | null {
+  const { animation } = getStateColors(state)
+  return animationVariantMap[animation] ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +171,65 @@ export const rippleEmit: Variants = {
     opacity: [1, 0.7, 1],
     transition: { duration: 0.4, ease: 'easeOut' },
   },
+}
+
+// ---------------------------------------------------------------------------
+// SVG Flow Particle variants (for FlowParticlePath)
+// ---------------------------------------------------------------------------
+
+/** Particle traveling along the operator chain SVG path. */
+export const flowParticle: Variants = {
+  enter: (custom: { startX: number; y: number }) => ({
+    cx: custom.startX,
+    cy: custom.y,
+    opacity: 0,
+    r: 2,
+  }),
+  animate: (custom: { endX: number; y: number; delay?: number }) => ({
+    cx: custom.endX,
+    cy: custom.y,
+    opacity: [0, 1, 1, 0],
+    r: 5,
+    transition: { duration: 1.2, delay: custom.delay ?? 0, ease: 'easeInOut' },
+  }),
+  exit: { opacity: 0, r: 0, transition: { duration: 0.2 } },
+}
+
+/** Filtered value: shrinks and drops off the path. */
+export const flowParticleFiltered: Variants = {
+  enter: (custom: { startX: number; y: number }) => ({
+    cx: custom.startX,
+    cy: custom.y,
+    opacity: 1,
+    r: 5,
+  }),
+  filtered: (custom: { endX: number; y: number }) => ({
+    cx: custom.endX,
+    cy: custom.y + 20,
+    opacity: 0,
+    r: 2,
+    transition: { duration: 0.5, ease: 'easeIn' },
+  }),
+}
+
+/** Transformed value: changes fill color mid-path. */
+export const flowParticleTransform: Variants = {
+  enter: (custom: { startX: number; y: number }) => ({
+    cx: custom.startX,
+    cy: custom.y,
+    opacity: 0,
+    r: 3,
+    fill: '#6366f1', // indigo input
+  }),
+  animate: (custom: { endX: number; y: number }) => ({
+    cx: custom.endX,
+    cy: custom.y,
+    opacity: [0, 1, 1, 0],
+    r: 5,
+    fill: ['#6366f1', '#6366f1', '#10b981', '#10b981'], // indigo → emerald
+    transition: { duration: 1.2, ease: 'easeInOut' },
+  }),
+  exit: { opacity: 0, r: 0, transition: { duration: 0.2 } },
 }
 
 // ---------------------------------------------------------------------------
@@ -203,6 +316,29 @@ export const staggerFast: Variants = {
     opacity: 1,
     transition: { staggerChildren: 0.02 },
   },
+}
+
+// ---------------------------------------------------------------------------
+// Micro-interaction presets
+// ---------------------------------------------------------------------------
+
+/** Lift + shadow on hover. Apply via whileHover={hoverLift}. */
+export const hoverLift = {
+  y: -4,
+  boxShadow: '0 8px 25px -5px rgba(0, 0, 0, 0.15)',
+  transition: { type: 'spring', stiffness: 400, damping: 25 },
+}
+
+/** Subtle press on tap. Apply via whileTap={tapPress}. */
+export const tapPress = {
+  scale: 0.97,
+  transition: { duration: 0.1 },
+}
+
+/** Very subtle scale on hover for tree/graph nodes. */
+export const hoverGlow = {
+  scale: 1.01,
+  transition: { type: 'spring', stiffness: 400, damping: 25 },
 }
 
 // ---------------------------------------------------------------------------

@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { Card, CardBody, Chip } from '@heroui/react'
-import { motion } from 'framer-motion'
+import { motion, LayoutGroup } from 'framer-motion'
 import type { CoroutineNode, CoroutineState } from '@/types/api'
 import { buildCoroutineTree } from '@/lib/utils'
 import { useAnimationSlot } from '@/lib/animation-throttle'
-import { fadeSlideIn, pulseActive, pulseWaiting, shakeError } from '@/lib/animation-variants'
-import { FiCircle, FiCheckCircle, FiXCircle, FiPlay, FiClock, FiPause, FiAlertCircle } from 'react-icons/fi'
+import { fadeSlideIn, getStateVariant, hoverGlow } from '@/lib/animation-variants'
+import { getStateColors, isActiveState } from '@/lib/coroutine-state-colors'
+import { layoutSpring } from '@/lib/layout-transition'
 
 interface CoroutineTreeProps {
   coroutines: CoroutineNode[]
@@ -23,11 +24,13 @@ export function CoroutineTree({ coroutines }: CoroutineTreeProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {tree.map(node => (
-        <TreeNode key={node.id} node={node} depth={0} />
-      ))}
-    </div>
+    <LayoutGroup>
+      <div className="space-y-4">
+        {tree.map(node => (
+          <TreeNode key={node.id} node={node} depth={0} />
+        ))}
+      </div>
+    </LayoutGroup>
   )
 }
 
@@ -39,18 +42,12 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ node, depth }: TreeNodeProps) {
-  const stateConfig = getStateConfig(node.state)
+  const colors = getStateColors(node.state)
+  const stateVariant = getStateVariant(node.state)
   const shouldAnimate = useAnimationSlot()
 
-  // Add pulsing animation for active/waiting states
-  const shouldPulse = node.state === 'ACTIVE' || node.state === 'WAITING_FOR_CHILDREN'
-
-  // Add shake animation for failed/cancelled states
-  const shouldShake = node.state === 'FAILED' || node.state === 'CANCELLED'
-
-  // Determine the pulse variant and animate state
-  const pulseVariants = node.state === 'WAITING_FOR_CHILDREN' ? pulseWaiting : pulseActive
-  const pulseAnimateState = node.state === 'WAITING_FOR_CHILDREN' ? 'waiting' : 'active'
+  const shouldPulse = isActiveState(node.state) || node.state === 'SUSPENDED'
+  const shouldShake = node.state === 'FAILED'
 
   const OuterComponent = shouldAnimate ? motion.div : 'div'
   const PulseComponent = shouldAnimate ? motion.div : 'div'
@@ -59,21 +56,27 @@ function TreeNode({ node, depth }: TreeNodeProps) {
     <OuterComponent
       {...(shouldAnimate
         ? {
-            variants: shouldShake ? shakeError : fadeSlideIn,
-            initial: shouldShake ? 'idle' : 'hidden',
-            animate: shouldShake ? 'error' : 'visible',
+            layout: true,
+            layoutId: `tree-node-${node.id}`,
+            variants: shouldShake ? stateVariant?.variants : fadeSlideIn,
+            initial: shouldShake ? stateVariant?.initial : 'hidden',
+            animate: shouldShake ? stateVariant?.animate : 'visible',
             custom: depth,
+            transition: { layout: layoutSpring },
           }
         : {})}
       style={{ marginLeft: `${depth * 24}px` }}
     >
       <PulseComponent
-        {...(shouldAnimate && shouldPulse
+        {...(shouldAnimate && shouldPulse && stateVariant
           ? {
-              variants: pulseVariants,
-              initial: 'idle',
-              animate: pulseAnimateState,
+              variants: stateVariant.variants,
+              initial: stateVariant.initial,
+              animate: stateVariant.animate,
+              whileHover: hoverGlow,
             }
+          : shouldAnimate
+          ? { whileHover: hoverGlow }
           : {})}
       >
         <Card className="mb-2" shadow="sm">
@@ -82,7 +85,7 @@ function TreeNode({ node, depth }: TreeNodeProps) {
               <div className="flex items-center gap-3">
                 {shouldAnimate ? (
                   <motion.div
-                    className={stateConfig.color}
+                    className={colors.text}
                     animate={
                       node.state === 'ACTIVE'
                         ? { rotate: 360 }
@@ -98,11 +101,11 @@ function TreeNode({ node, depth }: TreeNodeProps) {
                         : {}
                     }
                   >
-                    {stateConfig.icon}
+                    <colors.Icon className="h-5 w-5" />
                   </motion.div>
                 ) : (
-                  <div className={stateConfig.color}>
-                    {stateConfig.icon}
+                  <div className={colors.text}>
+                    <colors.Icon className="h-5 w-5" />
                   </div>
                 )}
                 <div>
@@ -116,7 +119,7 @@ function TreeNode({ node, depth }: TreeNodeProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Chip
-                  color={stateConfig.chipColor}
+                  color={colors.chipColor}
                   size="sm"
                   variant="flat"
                   startContent={
@@ -182,7 +185,7 @@ function TreeNode({ node, depth }: TreeNodeProps) {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="mt-2 rounded-md bg-primary/10 px-3 py-2 text-xs text-primary"
+                className="mt-2 rounded-md bg-secondary/10 px-3 py-2 text-xs text-secondary"
               >
                 <div className="flex items-center justify-between mb-1">
                   <span>⏳ Waiting for {node.children.filter(c => c.state !== 'COMPLETED').length} child coroutine(s)</span>
@@ -228,7 +231,7 @@ function TreeNode({ node, depth }: TreeNodeProps) {
                   x: 0,
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className="mt-2 rounded-md bg-warning/10 px-3 py-2 text-xs text-warning border border-warning/30"
+                className="mt-2 rounded-md bg-default-100 px-3 py-2 text-xs text-default-500 border border-default-300"
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="flex items-center gap-1.5">
@@ -266,7 +269,7 @@ function JobPropertyBadge({
 }) {
   const getBadgeColor = () => {
     if (!value) return 'default'
-    if (label === 'isCancelled') return 'warning'
+    if (label === 'isCancelled') return 'default'
     if (label === 'isCompleted') return 'success'
     if (label === 'isActive') return 'success'
     return 'default'
@@ -368,56 +371,4 @@ function deriveJobState(coroutineState: string) {
   }
 }
 
-function getStateConfig(state: string) {
-  switch (state as CoroutineState) {
-    case 'CREATED':
-      return {
-        icon: <FiCircle className="h-5 w-5" />,
-        color: 'text-default-400',
-        chipColor: 'default' as const,
-      }
-    case 'ACTIVE':
-      return {
-        icon: <FiPlay className="h-5 w-5" />,
-        color: 'text-primary',
-        chipColor: 'primary' as const,
-      }
-    case 'SUSPENDED':
-      return {
-        icon: <FiPause className="h-5 w-5" />,
-        color: 'text-secondary',
-        chipColor: 'secondary' as const,
-      }
-    case 'WAITING_FOR_CHILDREN':
-      return {
-        icon: <FiClock className="h-5 w-5" />,
-        color: 'text-primary',
-        chipColor: 'primary' as const,
-      }
-    case 'COMPLETED':
-      return {
-        icon: <FiCheckCircle className="h-5 w-5" />,
-        color: 'text-success',
-        chipColor: 'success' as const,
-      }
-    case 'CANCELLED':
-      return {
-        icon: <FiXCircle className="h-5 w-5" />,
-        color: 'text-warning',
-        chipColor: 'warning' as const,
-      }
-    case 'FAILED':
-      return {
-        icon: <FiAlertCircle className="h-5 w-5" />,
-        color: 'text-danger',
-        chipColor: 'danger' as const,
-      }
-    default:
-      return {
-        icon: <FiCircle className="h-5 w-5" />,
-        color: 'text-default-400',
-        chipColor: 'default' as const,
-      }
-  }
-}
 
