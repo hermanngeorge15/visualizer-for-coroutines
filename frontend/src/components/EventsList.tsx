@@ -16,7 +16,7 @@ import type {
   CoroutineSuspendedEvent
 } from '@/types/api'
 import { formatNanoTime, formatRelativeTime } from '@/lib/utils'
-import { useAnimationSlot } from '@/lib/animation-throttle'
+import { useAnimatedInView } from '@/hooks/use-animated-in-view'
 import { FiSearch, FiClock, FiServer, FiDatabase, FiMail, FiCloud, FiActivity } from 'react-icons/fi'
 import { DispatcherBadge } from './DispatcherBadge'
 
@@ -80,12 +80,17 @@ function AnimatedEventItem({
   className,
   ...motionProps
 }: { children: ReactNode; className?: string } & HTMLMotionProps<'div'>) {
-  const shouldAnimate = useAnimationSlot()
+  const { ref, shouldAnimate } = useAnimatedInView()
   if (!shouldAnimate) {
-    return <div className={className}>{children}</div>
+    return <div ref={ref} className={className}>{children}</div>
   }
   return (
-    <motion.div className={className} {...motionProps}>
+    <motion.div
+      ref={ref}
+      className={className}
+      whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.03)' }}
+      {...motionProps}
+    >
       {children}
     </motion.div>
   )
@@ -148,9 +153,9 @@ export function EventsList({ events }: EventsListProps) {
                   event.kind?.includes('failed')
                     ? 'border-l-4 border-danger'
                     : event.kind?.includes('cancelled')
-                    ? 'border-l-4 border-warning'
+                    ? 'border-l-4 border-default-400'
                     : event.kind?.includes('body-completed')
-                    ? 'border-l-4 border-primary/50'
+                    ? 'border-l-4 border-secondary/50'
                     : ''
                 }
               >
@@ -253,7 +258,7 @@ export function EventsList({ events }: EventsListProps) {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-2 rounded-md bg-primary/10 px-3 py-2 text-xs text-primary"
+                      className="mt-2 rounded-md bg-secondary/10 px-3 py-2 text-xs text-secondary"
                     >
                       Body finished, waiting for children to complete (structured concurrency)
                     </motion.div>
@@ -273,7 +278,7 @@ export function EventsList({ events }: EventsListProps) {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-2 rounded-md bg-warning/10 px-3 py-2 text-xs text-warning"
+                      className="mt-2 rounded-md bg-default-100 px-3 py-2 text-xs text-default-500"
                     >
                       Cancelled by structured concurrency (parent or sibling failure)
                     </motion.div>
@@ -297,7 +302,7 @@ export function EventsList({ events }: EventsListProps) {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-2 rounded-md bg-warning/10 px-3 py-2 text-xs text-warning"
+                      className="mt-2 rounded-md bg-default-100 px-3 py-2 text-xs text-default-500"
                     >
                       🚫 Cancellation requested
                       {(event as JobCancellationRequestedEvent).requestedBy &&
@@ -311,7 +316,7 @@ export function EventsList({ events }: EventsListProps) {
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-2 rounded-md bg-primary/10 px-3 py-2 text-xs text-primary"
+                      className="mt-2 rounded-md bg-secondary/10 px-3 py-2 text-xs text-secondary"
                     >
                       ⏳ Waiting for job to complete
                       {(event as JobJoinRequestedEvent).waitingCoroutineId &&
@@ -406,11 +411,11 @@ export function EventsList({ events }: EventsListProps) {
 function getEventColor(kind: string): 'primary' | 'success' | 'warning' | 'danger' | 'default' | 'secondary' {
   if (kind.includes('created')) return 'default'
   if (kind.includes('started')) return 'primary'
-  if (kind.includes('body-completed')) return 'primary'
+  if (kind.includes('body-completed')) return 'secondary'
   if (kind.includes('completed')) return 'success'
   if (kind.includes('failed')) return 'danger'
-  if (kind.includes('cancelled')) return 'warning'
-  if (kind.includes('suspended')) return 'secondary'
+  if (kind.includes('cancelled')) return 'default'
+  if (kind.includes('suspended')) return 'warning'
   if (kind.includes('resumed')) return 'primary'
   if (kind === 'DispatcherSelected') return 'primary'
   if (kind === 'thread.assigned') return 'success'
@@ -418,8 +423,8 @@ function getEventColor(kind: string): 'primary' | 'success' | 'warning' | 'dange
   if (kind === 'DeferredAwaitStarted') return 'warning'
   if (kind === 'DeferredAwaitCompleted') return 'success'
   if (kind === 'JobStateChanged') return 'secondary'
-  if (kind === 'JobCancellationRequested') return 'warning'
-  if (kind === 'JobJoinRequested') return 'primary'
+  if (kind === 'JobCancellationRequested') return 'default'
+  if (kind === 'JobJoinRequested') return 'secondary'
   if (kind === 'JobJoinCompleted') return 'success'
   return 'default'
 }

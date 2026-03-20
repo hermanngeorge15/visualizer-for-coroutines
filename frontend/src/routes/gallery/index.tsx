@@ -16,6 +16,8 @@ import {
   FiGitBranch,
   FiZap,
 } from 'react-icons/fi'
+import { motion } from 'framer-motion'
+import { hoverLift, tapPress } from '@/lib/animation-variants'
 import { Layout } from '@/components/Layout'
 import { useCreateSession } from '@/hooks/use-sessions'
 import { useState } from 'react'
@@ -316,7 +318,12 @@ function GalleryPage() {
             {filteredScenarios.map((scenario) => {
               const isRunning = runningId === scenario.id
               return (
-                <Card key={scenario.id} className="flex flex-col">
+                <motion.div
+                  key={scenario.id}
+                  whileHover={hoverLift}
+                  whileTap={tapPress}
+                >
+                <Card className="flex flex-col">
                   <CardHeader className="flex flex-col items-start gap-2 pb-0">
                     <div className="flex w-full items-center justify-between">
                       <h3 className="text-lg font-semibold">
@@ -363,6 +370,7 @@ function GalleryPage() {
                     </Button>
                   </CardBody>
                 </Card>
+                </motion.div>
               )
             })}
           </div>
