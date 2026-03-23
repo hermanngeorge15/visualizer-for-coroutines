@@ -2,7 +2,7 @@ val kotlin_version: String by project
 
 plugins {
     kotlin("jvm") version "2.2.20"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20"
     id("maven-publish")
     id("jacoco")
 }
@@ -13,7 +13,7 @@ version = "0.1.0"
 dependencies {
     // Core dependencies only — no Ktor, no web framework
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("org.slf4j:slf4j-api:2.0.9")
 
     // Test
